@@ -5,10 +5,9 @@
 
 <hr/>
 
-
 ## Installation
 * Install [Composer](https://getcomposer.org/download)
-* Clone the repository: `git clone https://github.com/apriansyahrs/stater.git`
+* Clone the repository: `git clone https://github.com/CS-BusinessDev/web-shelf.git`
 * Install PHP dependencies: `composer install`
 * Setup configuration: `cp .env.example .env`
 * Generate application key: `php artisan key:generate`
