@@ -1,0 +1,59 @@
+{
+    "Category": "Kategori",
+    "Categories": "Kategori",
+
+    "User": "Pengguna",
+    "Users": "Pengguna",
+
+    "Business Entity": "Badan Usaha",
+    "Business Entities": "Badan Usaha",
+
+    "Brand": "Merek",
+    "Brands": "Merek",
+
+    "Asset Location": "Lokasi",
+    "Asset Locations": "Lokasi",
+
+    "Job Title": "Jabatan",
+    "Job Titles": "Jabatan",
+
+    "Asset": "Aset",
+    "Assets": "Aset",
+
+    "Purchase date": "Tanggal Pembelian",
+    "Business entity": "Badan Usaha",
+    "Item name": "Nama Barang",
+    "Category id": "Kategori",
+    "Type": "Tipe",
+    "Serial number": "Nomor Seri",
+    "Imei1": "IMEI 1",
+    "Imei2": "IMEI 2",
+    "Item price": "Harga Barang",
+    "Inventory holder name": "Nama Pemegang Inventaris",
+    "Inventory holder position": "Jabatan Pemegang Inventaris",
+    "Asset location": "Lokasi",
+    "Item age": "Umur Barang",
+    "Status": "Status",
+    "Job title": "Jabatan",
+    "Equipment": "Perlengkapan",
+    "From user": "Dari",
+    "To user id": "Ke",
+    "Brand id": "Merek",
+    "Asset id": "Aset",
+    "Asset location id": "Lokasi",
+    "Business entity id": "Badan Usaha",
+    "To user": "Ke",
+    "Asset transfer": "Nomor Surat",
+    "Parent id": "Kategori",
+    "Job title id": "Jabatan Pekerjaan",
+    "Is available": "Status",
+    "Document": "Dokumen",
+    "Transfer date": "Tanggal transfer",
+
+    "Upload bast": "Unggah BAST",
+    "Letter number": "Nomor Surat",
+
+    "Name": "Nama",
+    "Created at": "Dibuat pada",
+    "Updated at": "Diperbarui pada"
+}

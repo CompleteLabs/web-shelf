@@ -1,0 +1,62 @@
+{
+    "Category": "Category",
+    "Categories": "Categories",
+
+    "User": "User",
+    "Users": "Users",
+
+    "Business Entity": "Business Entity",
+    "Business Entities": "Business Entities",
+
+    "Brand": "Brand",
+    "Brands": "Brands",
+
+    "Asset Location": "Asset Location",
+    "Asset Locations": "Asset Locations",
+
+    "Job Title": "Job Title",
+    "Job Titles": "Job Titles",
+
+    "Asset": "Asset",
+    "Assets": "Assets",
+
+    "Purchase date": "Purchase Date",
+    "Business entity": "Business Entity",
+    "Item name": "Item Name",
+    "Category id": "Category",
+    "Type": "Type",
+    "Serial number": "Serial Number",
+    "Imei1": "IMEI 1",
+    "Imei2": "IMEI 2",
+    "Item price": "Item Price",
+    "Inventory holder name": "Inventory Holder Name",
+    "Inventory holder position": "Inventory Holder Position",
+    "Asset location": "Asset Location",
+    "Item age": "Item Age",
+    "Status": "Status",
+    "Job title": "Job Title",
+    "Equipment": "Equipment",
+    "From user": "From",
+    "To user id": "To",
+    "Brand id": "Brand",
+    "Asset id": "Asset",
+    "Asset location id": "Asset Location",
+    "Business entity id": "Business Entity",
+    "To user": "To",
+    "Asset transfer": "Asset Transfer",
+    "Parent id": "Category",
+    "Job title id": "Job Title",
+    "Is available": "Is Available",
+
+    "Aset Tersedia": "Available Assets",
+    "Aset Digunakan": "Used Assets",
+    "Jumlah Aset": "Total Assets",
+    "Jumlah Nilai Aset": "Total Asset Value",
+
+    "Upload bast": "Upload BAST",
+    "Letter number": "Letter Number",
+
+    "Name": "Name",
+    "Created at": "Created At",
+    "Updated at": "Updated At"
+}
