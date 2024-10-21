@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AssetTransfer;
+use App\Models\Task;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -23,8 +24,8 @@ class PdfController extends Controller
 
         // Menggunakan nilai dari kolom letterhead, atau default image jika tidak ada
         $headerImage = $assetTransfer->businessEntity->letterhead
-        ? asset('storage/' . $assetTransfer->businessEntity->letterhead)
-        : asset('images/cvcs_kop.png');
+            ? asset('storage/' . $assetTransfer->businessEntity->letterhead)
+            : asset('images/cvcs_kop.png');
 
 
 
@@ -37,5 +38,17 @@ class PdfController extends Controller
         $pdf = Pdf::loadView('pdf.asset-transfer', compact('assetTransfer', 'headerImage'));
 
         return $pdf->download($fileName);
+    }
+
+    public function downloadTaskCompletion($id)
+    {
+        $task = Task::findOrFail($id);
+    
+        // Ganti spasi dengan underscore dan ubah jadi huruf kecil semua
+        $fileName = strtolower(str_replace(' ', '_', $task->name));
+    
+        $pdf = PDF::loadView('pdf.task-completion', compact('task'));
+    
+        return $pdf->download('berita_acara_pengerjaan_' . $fileName . '.pdf');
     }
 }

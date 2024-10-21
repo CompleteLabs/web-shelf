@@ -14,6 +14,7 @@ class Asset extends Model
         'purchase_date',
         'business_entity_id',
         'name',
+        'image',
         'category_id',
         'brand_id',
         'type',

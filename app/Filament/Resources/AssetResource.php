@@ -12,6 +12,7 @@ use App\Models\Category;
 use App\Models\User;
 use Filament\Forms\Components\Card;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -19,6 +20,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid as ComponentsGrid;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section as ComponentsSection;
 use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
@@ -93,6 +95,12 @@ class AssetResource extends Resource
                                     ->translateLabel('Nama')
                                     ->required()
                                     ->maxLength(255),
+                                FileUpload::make('image')
+                                    ->label('Gambar Aset')
+                                    ->directory('assets') // Define the directory to store images
+                                    ->image() // Only allow image uploads
+                                    ->maxSize(2048) // Maximum size (optional)
+                                    ->columnSpan(2),
                             ])
                             ->columns(2),
 
@@ -280,6 +288,10 @@ class AssetResource extends Resource
                                     ->label(__('🏷️ Merek')),
                                 TextEntry::make('type')
                                     ->label(__('🔖 Tipe')),
+                                ImageEntry::make('image')
+                                    ->label('Gambar Aset')
+                                    ->width('100px') // Set width
+                                    ->height('100px'), // Set height
                                 TextEntry::make('serial_number')
                                     ->label(__('🔢 Nomor Seri')),
                                 TextEntry::make('imei1')
