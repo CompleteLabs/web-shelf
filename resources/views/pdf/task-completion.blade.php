@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berita Acara Pengerjaan</title>
+    <title>Berita Acara Pengerjaan {{ $task->name }}</title>
     <style>
         @page {
-            margin: 1cm;
+            margin: 0.5cm 1cm;
         }
 
         body {
@@ -23,11 +23,17 @@
             padding: 0;
         }
 
+        .header img {
+            width: 100%;
+            height: auto;
+        }
+
         .content {
             margin: 32px;
         }
 
-        h1, h2 {
+        h1,
+        h2 {
             text-align: center;
             font-size: 18px;
             margin: 0;
@@ -35,41 +41,70 @@
             text-transform: uppercase;
         }
 
-        .details-table {
-            margin-bottom: 20px;
+        h2 {
+            margin-bottom: 32px;
+        }
+
+        .details,
+        .table-container {
+            margin-bottom: 30px;
+        }
+
+        .details p {
+            margin: 0px;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .details-table,
+        .signature-table {
+            width: 100%;
+            margin-bottom: 30px;
+            font-size: 16px;
+            border: none;
+        }
+
+        .details-table td,
+        .signature-table td {
+            padding: 0px;
+            vertical-align: top;
+        }
+
+        .details-table td {
+            border: none;
         }
 
         .signature-table {
             margin-top: 40px;
         }
 
-        .details-table, .signature-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 16px;
-        }
-
-        .details-table td, .signature-table td {
-            padding: 10px;
-            vertical-align: top;
-        }
-
-        .details-table td {
-            border: none;
-            margin: 0;
-            padding: 1px;
-        }
-
         .signature-table td {
             text-align: center;
-            width: 50%;
-            height: 80px;
+            width: 33.33%;
             border: none;
         }
 
-        .details p, .signature-space p {
-            margin: 0;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
             font-size: 16px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        .signature-table p {
+            margin: 0;
         }
 
         .signature-space {
@@ -79,43 +114,77 @@
         .justify {
             text-align: justify;
         }
+
+        .attachments img {
+            max-width: 200px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Kop Surat -->
     <div class="header">
-        <h1>Berita Acara Pengerjaan {{ $task->name }}</h1>
-        <h2>Nomer Dokumen: {{ $task->id }}</h2>
+        <img src="{{ $headerImage }}" alt="Kop Surat">
     </div>
 
     <div class="content">
-        <p>Pada hari <strong>{{ $task->updated_at->translatedFormat('l, d F Y H:i') }}</strong>, telah dilakukan pengerjaan berupa:</p>
+        <!-- Judul dan Nomor Surat -->
+        <h1>Berita Acara Pengerjaan {{ $task->name }}</h1>
+        <h2>Nomer: {{ $task->code }}</h2>
 
-        <table class="details-table">
-            <tr>
-                <td style="width: 30%;"><strong>Detail Pengerjaan:</strong></td>
-                <td style="width: 70%;">{{ $task->name }}</td>
-            </tr>
-            <tr>
-                <td><strong>Deskripsi:</strong></td>
-                <td>{{ $task->description }}</td>
-            </tr>
-            <tr>
-                <td><strong>Tempat Pelaksanaan:</strong></td>
-                <td>{{ $task->location }}</td>
-            </tr>
-            <tr>
-                <td><strong>Harga Pengerjaan:</strong></td>
-                <td>Rp {{ number_format($task->cost, 2) }}</td>
-            </tr>
-        </table>
+        <!-- Detail Pengerjaan -->
+        <div class="details">
+            <p>Pada hari <strong>{{ $task->updated_at->translatedFormat('l, d F Y H:i') }}</strong>, telah dilakukan pengerjaan berupa:</p>
+            <table class="details-table">
+                <tr>
+                    <td style="width: 22%;">Nama Pekerjaan</td>
+                    <td style="width: 2%;">:</td>
+                    <td style="width: 66%;"><strong>{{ $task->name }}</strong></td>
+                </tr>
+                <tr>
+                    <td style="width: 22%;">Deskripsi</td>
+                    <td style="width: 2%;">:</td>
+                    <td style="width: 66%;">{{ $task->description }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 22%;">Tempat Pelaksanaan</td>
+                    <td style="width: 2%;">:</td>
+                    <td style="width: 66%;">{{ $task->location }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 22%;">Harga Pengerjaan</td>
+                    <td style="width: 2%;">:</td>
+                    <td style="width: 66%;">Rp {{ number_format($task->cost, 2) }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 22%;">Lampiran</td>
+                    <td style="width: 2%;">:</td>
+                    <td style="width: 66%;"></td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="attachments">
+            {!! $attachments !!}
+        </div>
 
         <p>Dengan ini, disampaikan bahwa pengerjaan telah <strong>selesai</strong>.</p>
 
+        <!-- Tanda Tangan -->
         <table class="signature-table">
             <tr>
-                <td>Mengetahui,<br><br><br><br><br><strong>HR Manager</strong></td>
-                <td>Pelaksana<br><br><br><br><br><strong>GA</strong></td>
+                <td>
+                    <p>Mengetahui</p>
+                    <div class="signature-space"></div>
+                    <p><strong>HR Manager</strong></p>
+                </td>
+                <td>
+                    <p>Pelaksana</p>
+                    <div class="signature-space"></div>
+                    <p><strong>GA</strong></p>
+                </td>
             </tr>
         </table>
     </div>

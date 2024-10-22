@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('tasks', function (Blueprint $table) {
             $table->id();
+            $table->string('code')->unique();
+            $table->foreignId('business_entity_id')->constrained('business_entities');
             $table->string('name');
             $table->text('description');
             $table->foreignId('vendor_id')->constrained('vendors');

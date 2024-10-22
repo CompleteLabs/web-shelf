@@ -55,6 +55,14 @@ class TaskResource extends Resource
                         TextInput::make('location')
                             ->label('Lokasi')
                             ->required(),
+
+                        // Select untuk memilih Business Entity
+                        Select::make('business_entity_id')
+                            ->label('Entitas Bisnis')
+                            ->relationship('businessEntity', 'name') // Relasi ke tabel business_entities
+                            ->searchable() // Bisa mencari
+                            ->preload() // Preload data agar tampil lebih cepat
+                            ->required(), // Wajib diisi
                     ]),
 
                 // Vendor Information Section
@@ -179,86 +187,99 @@ class TaskResource extends Resource
             ->schema([
                 // General Information Section
                 Section::make('Informasi Umum')
+                    ->description('Detail penting mengenai tugas dan entitas terkait.')
                     ->schema([
                         Grid::make(2) // Two-column grid layout for better spacing
                             ->schema([
                                 TextEntry::make('name')
                                     ->label('Nama Tugas')
-                                    ->visible(fn($record) => $record !== null),
+                                    ->placeholder('Tidak ada nama tugas'),
 
                                 TextEntry::make('vendor.name')
                                     ->label('Nama Vendor')
-                                    ->visible(fn($record) => $record !== null),
+                                    ->placeholder('Tidak ada vendor yang ditugaskan'),
+
+                                TextEntry::make('businessEntity.name')
+                                    ->label('Badan Usaha')
+                                    ->placeholder('Tidak ada badan usaha terkait'),
+
+                                TextEntry::make('code')
+                                    ->label('Nomor Tugas')
+                                    ->placeholder('Kode tugas belum dibuat'),
                             ]),
-
-                        TextEntry::make('cost')
-                            ->label('Biaya')
-                            ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 2))
-                            ->visible(fn($record) => $record !== null),
-
-                        TextEntry::make('location')
-                            ->label('Lokasi')
-                            ->visible(fn($record) => $record !== null),
                     ])
-                    ->columns(1), // One column for full-width content (e.g., cost, location)
+                    ->columns(1) // Single column for easier readability
+                    ->collapsible(), // Allow section to be collapsible for a cleaner UI
 
                 // Status Section
                 Section::make('Status Pekerjaan')
+                    ->description('Periksa status terbaru dari tugas ini.')
                     ->schema([
                         TextEntry::make('status')
                             ->label('Status')
-                            ->visible(fn($record) => $record !== null),
+                            ->placeholder('Status belum diperbarui'),
                     ])
-                    ->columns(1), // Single column for status information
+                    ->columns(1)
+                    ->collapsible(), // Make it collapsible
 
                 // Attachments Section
                 Section::make('Lampiran')
+                    ->description('Lampiran terkait tugas ini.')
                     ->schema([
                         TextEntry::make('attachment')
                             ->label('Lampiran')
                             ->formatStateUsing(function ($state) {
-                                $baseUrl = asset(''); // Adjust this path as necessary
+                                $baseUrl = asset('storage'); // Path dasar untuk storage
 
-                                // If the state is a JSON-encoded string, decode it
+                                // Jika state adalah JSON-encoded string, ubah menjadi array
                                 if (is_string($state) && str_starts_with($state, '[')) {
                                     $state = json_decode($state, true); // Decode JSON string to array
                                 }
 
-                                // If the state is an array, display multiple images
+                                // Jika state adalah array, tampilkan gambar
                                 if (is_array($state)) {
-                                    return collect($state)->map(function ($image) use ($baseUrl) {
-                                        return "<img src='{$baseUrl}/{$image}' alt='Lampiran' style='max-width: 100px; margin-right: 10px;'>";
-                                    })->implode(''); // Combine all images into a single string
+                                    return "<div style='display: flex; flex-wrap: wrap; gap: 10px;'>"
+                                        . collect($state)->map(function ($image) use ($baseUrl) {
+                                            return "<img src='{$baseUrl}/{$image}' alt='Lampiran' style='max-width: 100px; border-radius: 5px;'>";
+                                        })->implode('') .
+                                        "</div>";
                                 }
 
-                                // If the state is a single image (string), display it directly
+                                // Jika hanya satu gambar
                                 if (is_string($state) && !empty($state)) {
-                                    return "<img src='{$baseUrl}/{$state}' alt='Lampiran' style='max-width: 100px;'>";
+                                    return "<img src='{$baseUrl}/{$state}' alt='Lampiran' style='max-width: 100px; border-radius: 5px;'>";
                                 }
 
-                                return 'Tidak ada lampiran'; // Fallback if no value is found
+                                return 'Tidak ada lampiran';
                             })
                             ->html(), // Enable HTML rendering for images
-                    ]),
+                    ])
+                    ->collapsible() // Allow section to be collapsible
+                    ->columns(1),
 
                 // Timestamps Section
                 Section::make('Tanggal')
+                    ->description('Waktu pembuatan dan pembaruan tugas ini.')
                     ->schema([
                         Grid::make(2) // Two-column grid for created and updated timestamps
                             ->schema([
                                 TextEntry::make('created_at')
                                     ->label('Dibuat Pada')
                                     ->dateTime()
-                                    ->visible(fn($record) => $record !== null),
+                                    ->placeholder('Tanggal pembuatan belum tersedia'),
 
                                 TextEntry::make('updated_at')
                                     ->label('Diperbarui Pada')
                                     ->dateTime()
-                                    ->visible(fn($record) => $record !== null),
+                                    ->placeholder('Tanggal pembaruan belum tersedia'),
                             ]),
-                    ]),
+                    ])
+                    ->columns(1)
+                    ->collapsible(), // Make this section collapsible too
             ]);
     }
+
+
 
     public static function getRelations(): array
     {
