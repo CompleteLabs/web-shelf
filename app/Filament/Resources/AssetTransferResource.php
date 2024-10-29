@@ -108,11 +108,18 @@ class AssetTransferResource extends Resource
                                     ->disabled(fn($context) => $context === 'edit' && !$isSuperAdmin)
                                     ->options(function (callable $get) {
                                         $fromUserId = $get('from_user_id');
+
                                         return User::where('id', '!=', $fromUserId)
                                             ->whereDoesntHave('roles', function ($query) {
                                                 $query->where('name', 'super_admin');
                                             })
-                                            ->pluck('name', 'id');
+                                            ->with('jobTitle') // Load the related job title
+                                            ->get()
+                                            ->mapWithKeys(function ($user) {
+                                                // Concatenate name and job title in the format "name - jobTitle"
+                                                $jobTitle = $user->jobTitle ? $user->jobTitle->title : 'N/A'; // Default if job title is missing
+                                                return [$user->id => "{$user->name} - {$jobTitle}"];
+                                            });
                                     })
                                     ->createOptionForm([
                                         TextInput::make('name')
@@ -355,7 +362,7 @@ class AssetTransferResource extends Resource
                     ])
                     ->columns(2) // Atur kolom agar menampilkan data dalam dua kolom
                     ->collapsible(), // Bisa diklik untuk membuka atau menutup
-                    ComponentSection::make('📦 Detail Aset yang Ditransfer')
+                ComponentSection::make('📦 Detail Aset yang Ditransfer')
                     ->schema([
                         RepeatableEntry::make('details')
                             ->schema([
