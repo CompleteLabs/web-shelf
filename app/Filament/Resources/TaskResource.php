@@ -22,6 +22,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Storage;
 
 class TaskResource extends Resource
 {
@@ -109,6 +110,12 @@ class TaskResource extends Resource
                         'warning' => 'in_progress', // Yellow badge for 'in_progress' status
                         'success' => 'completed',   // Green badge for 'completed' status
                     ]),
+                Tables\Columns\TextColumn::make('document_upload')
+                    ->url(fn($record) => $record && $record->document_upload ? Storage::url($record->document_upload) : null, true) // Membuat kolom URL untuk unduh
+                    ->openUrlInNewTab()
+                    ->translateLabel()
+                    ->getStateUsing(fn($record) => $record && $record->document_upload ? 'Dokumen' : '-')
+                    ->icon('heroicon-o-document-text'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -154,7 +161,7 @@ class TaskResource extends Resource
                                 ->maxSize(2048) // Maximum size (optional)
                                 ->required()
                                 ->multiple() // Enable multiple file uploads
-                                ->maxFiles(5) // Optionally, limit the number of files (example: 5)
+                                ->maxFiles(5), // Optionally, limit the number of files (example: 5)
                         ])
                         ->action(function ($record, $data) {
                             $record->update([
@@ -163,12 +170,31 @@ class TaskResource extends Resource
                             ]);
                         }),
 
+                    Tables\Actions\Action::make('upload')
+                        ->label('Upload')
+                        ->icon('heroicon-o-check-circle') // Use the check circle icon for complete
+                        ->color('success') // Use 'success' for green
+                        ->visible(fn($record) => $record->status === 'completed' && is_null($record->document_upload))
+                        ->form([
+                            FileUpload::make('document_upload')
+                                ->label('Upload Dokumen')
+                                ->directory('documents') // Define a different directory for documents
+                                ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']) // Allow only document types
+                                ->maxSize(5120) // Set a max size of 5MB
+                                ->required(),
+                        ])
+                        ->action(function ($record, $data) {
+                            $record->update([
+                                'document_upload' => $data['document_upload'], // Save the uploaded document
+                            ]);
+                        }),
+
                     // Custom Download Action (color: red, with download icon)
                     Tables\Actions\Action::make('download')
                         ->label('Download')
                         ->icon('heroicon-o-arrow-down-tray') // Use the download icon for download
                         ->color('danger') // Use 'danger' for red
-                        ->visible(fn($record) => $record->status === 'completed')
+                        ->visible(fn($record) => $record->status === 'completed' && is_null($record->document_upload))
                         ->url(fn($record) => route('task-completion.download', $record->id))
                         ->openUrlInNewTab(),
                 ])

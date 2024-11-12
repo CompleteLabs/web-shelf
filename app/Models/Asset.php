@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Asset extends Model
 {
@@ -32,6 +33,11 @@ class Asset extends Model
     protected $casts = [
         'is_available' => 'boolean',  // Casting 'is_available' sebagai boolean
     ];
+
+    public function attributes(): HasMany
+    {
+        return $this->hasMany(AssetAttribute::class);
+    }
 
     // Relasi ke tabel business_entities
     public function businessEntity()
@@ -157,5 +163,10 @@ class Asset extends Model
 
         // Jika semua pengecekan valid, kembalikan true
         return true;
+    }
+
+    public function vehicleChecksheets(): HasMany
+    {
+        return $this->hasMany(VehicleChecksheet::class, 'asset_id');
     }
 }

@@ -19,7 +19,8 @@ class Task extends Model
         'cost',
         'location',
         'status',
-        'attachment'
+        'attachment',
+        'document_upload'
     ];
 
     public function businessEntity(): BelongsTo

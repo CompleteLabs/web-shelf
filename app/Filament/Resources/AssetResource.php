@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AssetResource\Pages;
 use App\Filament\Resources\AssetResource\RelationManagers\AssetTransfersRelationManager;
 use App\Models\Asset;
+use App\Models\AssetAttribute;
 use App\Models\AssetLocation;
 use App\Models\Brand;
 use App\Models\BusinessEntity;
@@ -14,6 +15,7 @@ use Filament\Forms\Components\Card;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -25,14 +27,18 @@ use Filament\Infolists\Components\Section as ComponentsSection;
 use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Collection;
 
 class AssetResource extends Resource
 {
@@ -95,29 +101,63 @@ class AssetResource extends Resource
                                     ->translateLabel('Nama')
                                     ->required()
                                     ->maxLength(255),
-                                FileUpload::make('image')
-                                    ->label('Gambar Aset')
-                                    ->directory('assets') // Define the directory to store images
-                                    ->image() // Only allow image uploads
-                                    ->maxSize(2048) // Maximum size (optional)
-                                    ->columnSpan(2),
                             ])
                             ->columns(2),
 
-                        Card::make()
+                        Repeater::make('attributes')
+                            ->relationship('attributes') // Pastikan relasi ada di model Asset Anda
                             ->schema([
-                                TextInput::make('serial_number')
-                                    ->translateLabel()
-                                    ->maxLength(255),
-                                TextInput::make('imei1')
-                                    ->translateLabel()
-                                    ->maxLength(255),
-                                TextInput::make('imei2')
-                                    ->translateLabel()
-                                    ->maxLength(255),
-                            ])
-                            ->columns(3),
+                                Select::make('attribute_key')
+                                    ->label(__('Atribut'))
+                                    ->options(function () {
+                                        // Mengambil kunci atribut yang ada dari tabel `asset_attributes`
+                                        $existingAttributes = DB::table('asset_attributes')->distinct()->pluck('attribute_key')->toArray();
 
+                                        // Membuat array yang ditransformasi untuk tampilan
+                                        $options = [];
+                                        foreach ($existingAttributes as $attribute) {
+                                            // Transformasi snake_case menjadi Title Case
+                                            $formattedLabel = ucwords(str_replace('_', ' ', $attribute));
+                                            $options[$attribute] = $formattedLabel; // Menggunakan nilai asli sebagai kunci, label yang diubah sebagai nilai
+                                        }
+
+                                        // Menambahkan opsi "Tambah Baru"
+                                        $options['tambah_baru'] = 'Tambah Baru';
+
+                                        return $options;
+                                    })
+                                    ->searchable()
+                                    ->reactive()
+                                    ->placeholder('Pilih atribut atau Tambah Baru')
+                                    ->afterStateUpdated(function ($state, callable $set) {
+                                        // Aktifkan input kustom jika "Tambah Baru" dipilih
+                                        if ($state === 'tambah_baru') {
+                                            $set('is_custom_attribute', true);
+                                            $set('attribute_key', null); // Kosongkan nilai attribute_key
+                                        } else {
+                                            $set('is_custom_attribute', false);
+                                        }
+                                    })
+                                    ->visible(fn($get) => $get('is_custom_attribute') !== true), // Sembunyikan jika "Tambah Baru" dipilih
+
+                                TextInput::make('attribute_key')
+                                    ->label(__('Atribut Kustom'))
+                                    ->placeholder('Masukkan nama atribut baru')
+                                    ->visible(fn($get) => $get('is_custom_attribute') === true) // Tampilkan hanya jika "Tambah Baru" dipilih
+                                    ->required(fn($get) => $get('is_custom_attribute') === true) // Wajib diisi jika "Tambah Baru" dipilih
+                                    ->dehydrateStateUsing(function ($state, callable $get) {
+                                        // Pastikan nilai kunci kustom diubah menjadi format yang diinginkan
+                                        return $get('is_custom_attribute') === true ? strtolower(str_replace(' ', '_', $state)) : null;
+                                    }),
+
+                                TextInput::make('attribute_value')
+                                    ->label(__('Nilai Atribut'))
+                                    ->required()
+                                    ->placeholder('Masukkan nilai atribut, misalnya 12345'),
+                            ])
+                            ->columns(2)
+                            ->label(__('Atribut Kustom'))
+                            ->columnSpan(2),
                         // Super Admin
                         Card::make()
                             ->schema([
@@ -139,6 +179,8 @@ class AssetResource extends Resource
                             ->visible(fn() => auth()->user()->hasRole('super_admin')),
                     ])
                     ->columnSpan(2),
+
+
                 // Kolom kanan
                 Card::make()
                     ->schema([
@@ -183,6 +225,11 @@ class AssetResource extends Resource
                                 // Return the ID of the newly created asset location
                                 return $assetLocation->id;
                             }),
+                        FileUpload::make('image')
+                            ->label('Gambar Aset')
+                            ->directory('assets') // Define the directory to store images
+                            ->image() // Only allow image uploads
+                            ->maxSize(2048),
                     ])
                     ->columns(1)
                     ->columnSpan(1),
@@ -238,6 +285,12 @@ class AssetResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+                BulkAction::make('pindahkanKeAtribut')
+                    ->label('Pindahkan ke Atribut')
+                    ->action(fn(Collection $records) => self::pindahkanKeAssetAttributeBulk($records))
+                    ->requiresConfirmation()
+                    ->color('primary')
+                    ->icon('heroicon-o-arrow-right'), // Ikon untuk bulk action
             ]);
     }
 
@@ -274,7 +327,7 @@ class AssetResource extends Resource
             ->schema([
                 ComponentsSection::make('💼 Informasi Aset')
                     ->schema([
-                        ComponentsGrid::make(2)  // Grid untuk informasi aset menggunakan 2 kolom
+                        ComponentsGrid::make(2)
                             ->schema([
                                 TextEntry::make('name')
                                     ->label(__('📝 Nama Aset'))
@@ -289,23 +342,29 @@ class AssetResource extends Resource
                                 TextEntry::make('type')
                                     ->label(__('🔖 Tipe')),
                                 ImageEntry::make('image')
-                                    ->label('Gambar Aset')
-                                    ->width('100px') // Set width
-                                    ->height('100px'), // Set height
-                                TextEntry::make('serial_number')
-                                    ->label(__('🔢 Nomor Seri')),
-                                TextEntry::make('imei1')
-                                    ->label(__('📱 IMEI 1')),
-                                TextEntry::make('imei2')
-                                    ->label(__('📱 IMEI 2')),
+                                    ->label(__('Gambar Aset'))
+                                    ->width('100px')
+                                    ->height('100px'),
                             ]),
                     ])
                     ->columnSpan(2)
-                    ->grow(true),  // Bagian Informasi Aset tetap menggunakan dua kolom penuh
+                    ->grow(true),
+
+                ComponentsSection::make('⚙️ Atribut Khusus')
+                    ->schema([
+                        ComponentsGrid::make(2)
+                            ->schema(function ($record) {
+                                return $record->attributes->map(function ($attribute) {
+                                    return TextEntry::make($attribute->attribute_key)
+                                        ->label(ucwords(str_replace('_', ' ', $attribute->attribute_key)))
+                                        ->state($attribute->attribute_value);
+                                })->toArray();
+                            }),
+                    ]),
 
                 ComponentsSection::make('🛒 Detail Pembelian')
                     ->schema([
-                        ComponentsGrid::make(4)  // Grid untuk Detail Pembelian menggunakan 4 kolom horizontal
+                        ComponentsGrid::make(4)
                             ->schema([
                                 TextEntry::make('purchase_date')
                                     ->label(__('📅 Tanggal Pembelian'))
@@ -326,7 +385,7 @@ class AssetResource extends Resource
 
                 ComponentsSection::make('🏠 Ketersediaan')
                     ->schema([
-                        ComponentsGrid::make(4)  // Grid untuk Ketersediaan menggunakan 2 kolom
+                        ComponentsGrid::make(4)
                             ->schema([
                                 TextEntry::make('assetLocation.name')
                                     ->label(__('📍 Lokasi Aset')),
@@ -339,15 +398,48 @@ class AssetResource extends Resource
                                     ->color(fn(string $state): string => $state == 'Tersedia' ? 'success' : 'warning')
                                     ->extraAttributes(['style' => 'font-weight:bold;']),
                                 TextEntry::make('recipient.name')
-                                    ->label(__('✅ Status Validasi'))  // Label untuk status validasi
-                                    ->badge()  // Menambahkan badge
-                                    ->color(fn($record) => $record->checkValidRecipient() ? 'success' : 'danger')  // Menentukan warna badge
+                                    ->label(__('✅ Status Validasi'))
+                                    ->badge()
+                                    ->color(fn($record) => $record->checkValidRecipient() ? 'success' : 'danger')
                                     ->formatStateUsing(function ($record) {
-                                        return $record->checkValidRecipient() ? 'Valid' : 'Tidak Valid';  // Menampilkan status validasi
-                                    })
+                                        return $record->checkValidRecipient() ? 'Valid' : 'Tidak Valid';
+                                    }),
                             ]),
                     ]),
             ])
-            ->columns(1);  // Atur agar semua bagian ditampilkan secara vertikal (atas-bawah)
+            ->columns(1); // Atur agar semua bagian ditampilkan secara vertikal (atas-bawah)
+    }
+
+    // In your AssetAttribute model
+    protected static function pindahkanKeAssetAttributeBulk($records)
+    {
+        foreach ($records as $record) {
+            // Daftar kolom yang akan dipindahkan sebagai `attribute_key` dan `attribute_value`
+            $attributes = [
+                'serial_number' => $record->serial_number,
+                'imei1' => $record->imei1,
+                'imei2' => $record->imei2,
+            ];
+
+            foreach ($attributes as $key => $value) {
+                if ($value) { // Pastikan hanya memindahkan jika ada nilai
+                    AssetAttribute::updateOrCreate(
+                        [
+                            'asset_id' => $record->id,
+                            'attribute_key' => $key,
+                        ],
+                        [
+                            'attribute_value' => $value,
+                        ]
+                    );
+                }
+            }
+        }
+
+        Notification::make()
+            ->title('Sukses')
+            ->body('Atribut berhasil dipindahkan ke AssetAttribute untuk aset yang dipilih.')
+            ->success()
+            ->send();
     }
 }

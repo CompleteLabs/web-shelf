@@ -116,7 +116,7 @@
         }
 
         .attachments img {
-            max-width: 200px;
+            max-width: 150px;
             margin-right: 10px;
             margin-bottom: 10px;
         }
