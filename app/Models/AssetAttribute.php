@@ -12,22 +12,19 @@ class AssetAttribute extends Model
 
     protected $fillable = [
         'asset_id',
-        'attribute_key',
+        'custom_attribute_id',
         'attribute_value',
     ];
 
-    protected static function booted()
-    {
-        static::creating(function ($assetAttribute) {
-            // Ubah attribute_key menjadi snake_case
-            if ($assetAttribute->attribute_key) {
-                $assetAttribute->attribute_key = strtolower(str_replace(' ', '_', $assetAttribute->attribute_key));
-            }
-        });
-    }
-
-    public function asset(): BelongsTo
+    // Relasi ke aset
+    public function asset()
     {
         return $this->belongsTo(Asset::class);
+    }
+
+    // Relasi ke custom attribute
+    public function customAttribute()
+    {
+        return $this->belongsTo(CustomAssetAttribute::class, 'custom_attribute_id');
     }
 }

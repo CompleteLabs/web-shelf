@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('asset_attributes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('asset_id')->constrained()->onDelete('cascade');
-            $table->string('attribute_key');
-            $table->string('attribute_value')->nullable();
+            $table->foreignId('asset_id')->constrained('assets')->onDelete('cascade'); // Relasi ke aset
+            $table->foreignId('custom_attribute_id')->nullable()->constrained('custom_asset_attributes')->onDelete('set null'); // Relasi ke custom atribut
+            $table->string('attribute_value')->nullable(); // Nilai dari atribut khusus, misalnya tanggal atau nilai lain
             $table->timestamps();
         });
     }
