@@ -76,16 +76,16 @@ class CustomAssetAttributeResource extends Resource
                             ->default(true),
 
                         Forms\Components\Select::make('category_id')
-                            ->label('Kategori')
-                            ->options(self::getCategoryOptions())
-                            ->multiple()
-                            ->searchable()
-                            ->placeholder('Pilih kategori yang relevan')
-                            ->afterStateHydrated(function ($state, callable $set) {
-                                if ($state) {
-                                    $set('category_id', array_map('intval', $state)); // Konversi ke integer saat dihydrate
-                                }
-                            }),
+                        ->label('Kategori')
+                        ->options(self::getCategoryOptions())
+                        ->multiple()
+                        ->searchable()
+                        ->placeholder('Pilih kategori yang relevan')
+                        ->afterStateHydrated(function ($state, callable $set) {
+                            if ($state) {
+                                $set('category_id', array_map('intval', $state)); // Konversi ke integer saat dihydrate
+                            }
+                        }),
 
                     ])
                     ->columns(3),
