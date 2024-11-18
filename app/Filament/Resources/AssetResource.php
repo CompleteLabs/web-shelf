@@ -34,6 +34,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Columns\BadgeColumn;
@@ -287,9 +288,13 @@ class AssetResource extends Resource
                             ->required(),
                         TextInput::make('item_price')
                             ->translateLabel()
+                            ->mask(RawJs::make('$money($input)'))
+                            ->stripCharacters('.')
                             ->numeric(),
                         TextInput::make('qty')
                             ->translateLabel()
+                            ->default(1)
+                            ->required()
                             ->numeric(),
                         Select::make('asset_location_id')
                             ->translateLabel()
@@ -347,7 +352,9 @@ class AssetResource extends Resource
                 TextColumn::make('imei1')->translateLabel()->sortable()->searchable(),
                 TextColumn::make('imei2')->translateLabel()->sortable()->searchable(),
                 TextColumn::make('item_price')->translateLabel()->sortable()->money('IDR', true),
-                TextColumn::make('item_age')->translateLabel()->sortable(),
+                TextColumn::make('item_age')
+                    ->translateLabel()
+                    ->sortable(query: fn($query, $direction) => $query->sortByItemAge($direction)),
                 TextColumn::make('qty') // Mengambil nama dari relasi businessEntity
                     ->translateLabel()
                     ->badge(),

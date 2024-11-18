@@ -3,10 +3,10 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\AssetTransfer;
+use App\Models\CustomAssetAttribute;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class AssetTransferPolicy
+class CustomAssetAttributePolicy
 {
     use HandlesAuthorization;
 
@@ -15,15 +15,15 @@ class AssetTransferPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_asset::transfer');
+        return $user->can('view_any_custom::asset::attribute');
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, AssetTransfer $assetTransfer): bool
+    public function view(User $user, CustomAssetAttribute $customAssetAttribute): bool
     {
-        return $user->can('view_asset::transfer');
+        return $user->can('view_custom::asset::attribute');
     }
 
     /**
@@ -31,23 +31,23 @@ class AssetTransferPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_asset::transfer');
+        return $user->can('create_custom::asset::attribute');
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, AssetTransfer $assetTransfer): bool
+    public function update(User $user, CustomAssetAttribute $customAssetAttribute): bool
     {
-        return $user->can('update_asset::transfer');
+        return $user->can('update_custom::asset::attribute');
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, AssetTransfer $assetTransfer): bool
+    public function delete(User $user, CustomAssetAttribute $customAssetAttribute): bool
     {
-        return $user->can('delete_asset::transfer');
+        return $user->can('delete_custom::asset::attribute');
     }
 
     /**
@@ -55,13 +55,13 @@ class AssetTransferPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_asset::transfer');
+        return $user->can('delete_any_custom::asset::attribute');
     }
 
     /**
      * Determine whether the user can permanently delete.
      */
-    public function forceDelete(User $user, AssetTransfer $assetTransfer): bool
+    public function forceDelete(User $user, CustomAssetAttribute $customAssetAttribute): bool
     {
         return $user->can('{{ ForceDelete }}');
     }
@@ -77,7 +77,7 @@ class AssetTransferPolicy
     /**
      * Determine whether the user can restore.
      */
-    public function restore(User $user, AssetTransfer $assetTransfer): bool
+    public function restore(User $user, CustomAssetAttribute $customAssetAttribute): bool
     {
         return $user->can('{{ Restore }}');
     }
@@ -93,7 +93,7 @@ class AssetTransferPolicy
     /**
      * Determine whether the user can replicate.
      */
-    public function replicate(User $user, AssetTransfer $assetTransfer): bool
+    public function replicate(User $user, CustomAssetAttribute $customAssetAttribute): bool
     {
         return $user->can('{{ Replicate }}');
     }

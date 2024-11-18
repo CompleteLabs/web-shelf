@@ -58,7 +58,8 @@ class CustomAssetAttributeResource extends Resource
                                 'date' => 'Date Picker',
                             ])
                             ->searchable()
-                            ->placeholder('Pilih tipe input'),
+                            ->placeholder('Pilih tipe input')
+                            ->reactive(),
                     ])
                     ->columns(2), // Membagi dua kolom untuk section ini
 
@@ -126,6 +127,7 @@ class CustomAssetAttributeResource extends Resource
                             ->placeholder('Pilih tanggal tetap untuk notifikasi')
                             ->visible(fn(callable $get) => $get('notification_type') === 'fixed_date'),
                     ])
+                    ->visible(fn (callable $get) => $get('type') === 'date')
                     ->columns(3)
                     ->collapsed(false), // Section ini tetap terbuka
 

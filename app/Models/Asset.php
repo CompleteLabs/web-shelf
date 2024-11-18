@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -108,6 +109,11 @@ class Asset extends Model
         } else {
             return $this->formatDiff($diffInDays, 'hari');
         }
+    }
+
+    public function scopeSortByItemAge(Builder $query, string $direction = 'asc')
+    {
+        $query->orderByRaw('DATEDIFF(NOW(), purchase_date) ' . $direction);
     }
 
     public function getIsAvailableAttribute($value)

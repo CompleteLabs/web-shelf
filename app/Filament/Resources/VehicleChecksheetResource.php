@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -27,22 +28,28 @@ class VehicleChecksheetResource extends Resource
                 // Informasi Kendaraan
                 Forms\Components\Section::make('Informasi Kendaraan')
                     ->schema([
-                        Forms\Components\Select::make('asset_id')
-                            ->relationship('asset', 'name')
-                            ->required()
-                            ->label('Nama Aset'),
-                            Forms\Components\TextInput::make('reference_number')
+                        // Forms\Components\Select::make('asset_id')
+                        //     ->relationship('asset', 'name')
+                        //     ->label('Nama Aset'),
+                        Forms\Components\TextInput::make('reference_number')
                             ->required()
                             ->maxLength(255)
                             ->label('Nomor Referensi')
-                            ->disabled() // Membuat field read-only agar tidak bisa diubah oleh pengguna
+                            ->readOnly()
                             ->default(function () {
                                 return VehicleChecksheetResource::generateReferenceNumber();
                             }),
-                        Forms\Components\TextInput::make('license_plate')
+                        Forms\Components\Select::make('license_plate')
+                            ->label('Plat Nomor')
+                            ->options(function () {
+                                // Ambil data dari AssetAttribute yang terkait dengan CustomAssetAttribute "Plat Nomor"
+                                return \App\Models\AssetAttribute::whereHas('customAttribute', function ($query) {
+                                    $query->where('name', 'Plat Nomor');
+                                })->pluck('attribute_value', 'attribute_value'); // Menggunakan attribute_value sebagai key dan value
+                            })
+                            ->searchable()
                             ->required()
-                            ->maxLength(255)
-                            ->label('Plat Nomor'),
+                            ->placeholder('Pilih Plat Nomor'),
                         Forms\Components\TextInput::make('pic')
                             ->maxLength(255)
                             ->label('PIC (Penanggung Jawab)'),
@@ -56,18 +63,24 @@ class VehicleChecksheetResource extends Resource
                 Forms\Components\Section::make('Informasi Keberangkatan')
                     ->schema([
                         Forms\Components\TextInput::make('start_km')
+                            ->required()
                             ->numeric()
                             ->label('Kilometer Awal')
                             ->placeholder('Masukkan KM awal'),
                         Forms\Components\DateTimePicker::make('departure_time')
-                            ->label('Waktu Keberangkatan'),
+                            ->required()
+                            ->label('Waktu Keberangkatan')
+                            ->default(now()) // Mengatur nilai default menjadi waktu saat ini
+                            ->required(), // Jika field ini wajib diisi
                         Forms\Components\FileUpload::make('departure_photo')
                             ->image()
-                            ->maxSize(1024)
+                            ->resize(50)
+                            ->required()
                             ->label('Foto Keberangkatan'),
                         Forms\Components\FileUpload::make('departure_damage_report')
                             ->image()
-                            ->maxSize(1024)
+                            ->resize(50)
+                            ->required()
                             ->label('Laporan Kerusakan Saat Keberangkatan'),
                     ]),
 
@@ -75,20 +88,25 @@ class VehicleChecksheetResource extends Resource
                 Forms\Components\Section::make('Informasi Pengembalian')
                     ->schema([
                         Forms\Components\TextInput::make('end_km')
+                            ->required()
                             ->numeric()
                             ->label('Kilometer Akhir')
                             ->placeholder('Masukkan KM akhir'),
                         Forms\Components\DateTimePicker::make('return_time')
+                            ->required()
                             ->label('Waktu Pengembalian'),
                         Forms\Components\FileUpload::make('return_photo')
+                            ->required()
                             ->image()
-                            ->maxSize(1024)
+                            ->resize(50)
                             ->label('Foto Pengembalian'),
                         Forms\Components\FileUpload::make('return_damage_report')
+                            ->required()
                             ->image()
-                            ->maxSize(1024)
+                            ->resize(50)
                             ->label('Laporan Kerusakan Saat Pengembalian'),
-                    ]),
+                    ])
+                    ->hidden(fn($livewire) => $livewire instanceof \Filament\Resources\Pages\CreateRecord),
 
                 // Informasi Tambahan
                 Forms\Components\Section::make('Informasi Tambahan')
@@ -113,9 +131,6 @@ class VehicleChecksheetResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('asset.name')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('reference_number')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('pic')
@@ -130,20 +145,20 @@ class VehicleChecksheetResource extends Resource
                 Tables\Columns\TextColumn::make('departure_time')
                     ->dateTime()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('departure_photo')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('departure_damage_report')
-                    ->searchable(),
+                ImageColumn::make('departure_photo')
+                    ->checkFileExistence(false),
+                ImageColumn::make('departure_damage_report')
+                    ->checkFileExistence(false),
                 Tables\Columns\TextColumn::make('end_km')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('return_time')
                     ->dateTime()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('return_photo')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('return_damage_report')
-                    ->searchable(),
+                ImageColumn::make('return_photo')
+                    ->checkFileExistence(false),
+                ImageColumn::make('return_damage_report')
+                    ->checkFileExistence(false),
                 Tables\Columns\TextColumn::make('rental_duration')
                     ->numeric()
                     ->sortable(),
@@ -176,6 +191,12 @@ class VehicleChecksheetResource extends Resource
             ]);
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->orderByRaw('CAST(SUBSTRING_INDEX(reference_number, "-", -1) AS UNSIGNED) DESC');
+    }
+
     protected static function mutateFormDataBeforeCreate(array $data): array
     {
         // Panggil fungsi generateReferenceNumber untuk menghasilkan nomor referensi
@@ -187,8 +208,10 @@ class VehicleChecksheetResource extends Resource
     protected static function generateReferenceNumber(): string
     {
         $year = date('Y');
+
+        // Cari record dengan nomor terbesar untuk tahun ini
         $latestRecord = VehicleChecksheet::whereYear('created_at', $year)
-            ->orderByDesc('reference_number')
+            ->orderByRaw('CAST(SUBSTRING_INDEX(reference_number, "-", -1) AS UNSIGNED) DESC')
             ->first();
 
         if ($latestRecord) {

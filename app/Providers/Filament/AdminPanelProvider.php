@@ -86,6 +86,11 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugins([
+                \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make(),
+                \TomatoPHP\FilamentSettingsHub\FilamentSettingsHubPlugin::make()
+                    ->allowLocationSettings()
+                    ->allowSiteSettings()
+                    ->allowSocialMenuSettings(),
                 \BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin::make(),
                 \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make()
                     ->gridColumns([
