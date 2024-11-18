@@ -23,9 +23,9 @@ jobs:
         port: ${{ secrets.VPS_PORT }}
         script: |
           if [[ "${{ github.ref_name }}" == "main" ]]; then
-            cd ~/AppDev/www/production
+            cd ~/AppDev/www/production/web-shelf
           else
-            cd ~/AppDev/www/staging
+            cd ~/AppDev/www/staging/web-shelf
           fi
           
           git pull origin ${{ github.ref_name }}
