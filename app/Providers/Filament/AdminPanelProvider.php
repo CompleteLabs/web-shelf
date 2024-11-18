@@ -90,7 +90,8 @@ class AdminPanelProvider extends PanelProvider
                 \TomatoPHP\FilamentSettingsHub\FilamentSettingsHubPlugin::make()
                     ->allowLocationSettings()
                     ->allowSiteSettings()
-                    ->allowSocialMenuSettings(),
+                    ->allowSocialMenuSettings()
+                    ->allowShield(),
                 \BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin::make(),
                 \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make()
                     ->gridColumns([
@@ -110,9 +111,6 @@ class AdminPanelProvider extends PanelProvider
                     ]),
                 OverlookPlugin::make()
                     ->sort(2)
-                    ->excludes([
-                        AssetResource::class,
-                    ])
                     ->columns([
                         'default' => 1,
                         'sm' => 2,
