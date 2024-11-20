@@ -70,18 +70,27 @@ class VehicleChecksheetResource extends Resource
                         Forms\Components\DateTimePicker::make('departure_time')
                             ->required()
                             ->label('Waktu Keberangkatan')
-                            ->default(now()) // Mengatur nilai default menjadi waktu saat ini
-                            ->required(), // Jika field ini wajib diisi
+                            ->default(now()),
                         Forms\Components\FileUpload::make('departure_photo')
                             ->image()
                             ->resize(50)
                             ->required()
-                            ->label('Foto Keberangkatan'),
+                            ->label('Foto Keberangkatan')
+                            ->storeFileNamesUsing(function (\Illuminate\Http\UploadedFile $file): string {
+                                return 'scale_' . $file->getClientOriginalName();
+                            })
+                            ->directory('uploads/departure/photos') // Direktori untuk foto keberangkatan
+                            ->visibility('public'),
                         Forms\Components\FileUpload::make('departure_damage_report')
                             ->image()
                             ->resize(50)
                             ->required()
-                            ->label('Laporan Kerusakan Saat Keberangkatan'),
+                            ->label('Laporan Kerusakan Saat Keberangkatan')
+                            ->storeFileNamesUsing(function (\Illuminate\Http\UploadedFile $file): string {
+                                return 'scale_' . $file->getClientOriginalName();
+                            })
+                            ->directory('uploads/departure/reports') // Direktori untuk laporan keberangkatan
+                            ->visibility('public'),
                     ]),
 
                 // Informasi Pengembalian
@@ -99,15 +108,24 @@ class VehicleChecksheetResource extends Resource
                             ->required()
                             ->image()
                             ->resize(50)
-                            ->label('Foto Pengembalian'),
+                            ->label('Foto Pengembalian')
+                            ->storeFileNamesUsing(function (\Illuminate\Http\UploadedFile $file): string {
+                                return 'scale_' . $file->getClientOriginalName();
+                            })
+                            ->directory('uploads/return/photos') // Direktori untuk foto pengembalian
+                            ->visibility('public'),
                         Forms\Components\FileUpload::make('return_damage_report')
                             ->required()
                             ->image()
                             ->resize(50)
-                            ->label('Laporan Kerusakan Saat Pengembalian'),
+                            ->label('Laporan Kerusakan Saat Pengembalian')
+                            ->storeFileNamesUsing(function (\Illuminate\Http\UploadedFile $file): string {
+                                return 'scale_' . $file->getClientOriginalName();
+                            })
+                            ->directory('uploads/return/reports') // Direktori untuk laporan pengembalian
+                            ->visibility('public'),
                     ])
                     ->hidden(fn($livewire) => $livewire instanceof \Filament\Resources\Pages\CreateRecord),
-
                 // Informasi Tambahan
                 Forms\Components\Section::make('Informasi Tambahan')
                     ->schema([

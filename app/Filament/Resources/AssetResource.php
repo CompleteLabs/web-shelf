@@ -13,14 +13,10 @@ use App\Models\Category;
 use App\Models\CustomAssetAttribute;
 use App\Models\User;
 use Filament\Forms\Components\Card;
-use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -29,23 +25,16 @@ use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid as ComponentsGrid;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section as ComponentsSection;
-use Filament\Infolists\Components\Split;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Support\RawJs;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkAction;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Log;
 
 class AssetResource extends Resource
 {
@@ -92,14 +81,9 @@ class AssetResource extends Resource
                                     ->required()
                                     ->reactive()
                                     ->afterStateUpdated(function ($state, callable $set) {
-                                        logger()->info('Updated category_id:', ['state' => $state]);
-
                                         if ($state) {
                                             $set('attributes', []);
-
                                             $categoryId = is_array($state) ? $state : [$state];
-                                            logger()->info('Processed category_id as array:', ['categoryId' => $categoryId]);
-
                                             $attributes = CustomAssetAttribute::where('is_active', true)
                                                 ->where(function ($query) use ($categoryId) {
                                                     foreach ($categoryId as $id) {
@@ -115,9 +99,6 @@ class AssetResource extends Resource
                                                     ];
                                                 })
                                                 ->toArray();
-
-                                            logger()->info('Attributes loaded:', ['attributes' => $attributes]);
-
                                             $set('attributes', $attributes);
                                         }
                                     }),
@@ -139,20 +120,13 @@ class AssetResource extends Resource
                                     ->options(function (callable $get) {
                                         $categoryId = $get('../../category_id');
                                         $selectedId = $get('../custom_attribute_id');
-
-                                        logger()->info('Opsi dalam Repeater:', ['category_id' => $categoryId, 'selectedId' => $selectedId]);
-
                                         if ($categoryId) {
                                             $categoryId = is_array($categoryId) ? $categoryId : [$categoryId];
-
                                             // Ambil atribut yang sudah dipilih di semua entri repeater
                                             $selectedAttributes = collect($get('../attributes'))
                                                 ->pluck('custom_attribute_id')
                                                 ->filter()
                                                 ->toArray();
-
-                                            logger()->info('Atribut yang sudah dipilih:', ['selectedAttributes' => $selectedAttributes]);
-
                                             // Filter atribut yang sesuai dengan kategori dan belum dipilih
                                             $attributes = CustomAssetAttribute::where('is_active', true)
                                                 ->where(function ($query) use ($categoryId) {
@@ -164,9 +138,6 @@ class AssetResource extends Resource
                                                 ->whereNotIn('id', $selectedAttributes) // Pastikan atribut yang sudah dipilih tidak muncul lagi
                                                 ->pluck('name', 'id')
                                                 ->toArray();
-
-                                            logger()->info('Opsi yang dihasilkan:', ['options' => $attributes]);
-
                                             return $attributes;
                                         }
 
@@ -232,15 +203,10 @@ class AssetResource extends Resource
                             ->columnSpan(2)
                             ->visible(fn(callable $get) => $get('category_id') !== null)
                             ->afterStateHydrated(function ($state, callable $set, $record) {
-                                logger()->info('Hydrating attributes:', ['record' => $record, 'state' => $state]);
-
                                 if ($record && $record->attributes) {
                                     $state = [];
                                     foreach ($record->attributes as $attribute) {
                                         $customAttribute = CustomAssetAttribute::find($attribute->custom_attribute_id);
-
-                                        logger()->info('Hydrating custom_attribute_id:', ['customAttribute' => $customAttribute]);
-
                                         $state[] = [
                                             'custom_attribute_id' => $attribute->custom_attribute_id,
                                             'custom_attribute_label' => $customAttribute ? $customAttribute->name : null,
@@ -288,8 +254,6 @@ class AssetResource extends Resource
                             ->required(),
                         TextInput::make('item_price')
                             ->translateLabel()
-                            ->mask(RawJs::make('$money($input)'))
-                            ->stripCharacters('.')
                             ->numeric(),
                         TextInput::make('qty')
                             ->translateLabel()
@@ -327,7 +291,8 @@ class AssetResource extends Resource
                             ->label('Gambar Aset')
                             ->directory('assets') // Define the directory to store images
                             ->image() // Only allow image uploads
-                            ->maxSize(2048),
+                            ->maxSize(2048)
+                            ->resize(50),
                     ])
                     ->columns(1)
                     ->columnSpan(1),
