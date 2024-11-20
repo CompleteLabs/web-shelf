@@ -86,6 +86,12 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugins([
+                \TomatoPHP\FilamentPWA\FilamentPWAPlugin::make(),
+                \TomatoPHP\FilamentSettingsHub\FilamentSettingsHubPlugin::make()
+                    ->allowLocationSettings()
+                    ->allowSiteSettings()
+                    ->allowSocialMenuSettings()
+                    ->allowShield(),
                 \BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin::make(),
                 \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make()
                     ->gridColumns([
@@ -105,9 +111,6 @@ class AdminPanelProvider extends PanelProvider
                     ]),
                 OverlookPlugin::make()
                     ->sort(2)
-                    ->excludes([
-                        AssetResource::class,
-                    ])
                     ->columns([
                         'default' => 1,
                         'sm' => 2,

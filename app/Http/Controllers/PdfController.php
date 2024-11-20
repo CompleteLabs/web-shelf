@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AssetTransfer;
+use App\Models\Task;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -23,8 +24,8 @@ class PdfController extends Controller
 
         // Menggunakan nilai dari kolom letterhead, atau default image jika tidak ada
         $headerImage = $assetTransfer->businessEntity->letterhead
-        ? asset('storage/' . $assetTransfer->businessEntity->letterhead)
-        : asset('images/cvcs_kop.png');
+            ? asset('storage/' . $assetTransfer->businessEntity->letterhead)
+            : asset('images/cvcs_kop.png');
 
 
 
@@ -37,5 +38,30 @@ class PdfController extends Controller
         $pdf = Pdf::loadView('pdf.asset-transfer', compact('assetTransfer', 'headerImage'));
 
         return $pdf->download($fileName);
+    }
+
+    public function downloadTaskCompletion($id)
+    {
+        $task = Task::with('businessEntity')->findOrFail($id);
+
+        // Menggunakan nilai dari kolom letterhead di entitas bisnis terkait, atau default image jika tidak ada
+        $headerImage = $task->businessEntity->letterhead
+            ? asset('storage/' . $task->businessEntity->letterhead)
+            : asset('images/cvcs_kop.png');
+
+        // Ganti spasi dengan underscore dan ubah jadi huruf kecil semua untuk penamaan file
+        $fileName = strtolower(str_replace(' ', '_', $task->name));
+
+        // Siapkan lampiran
+        $attachments = collect(json_decode($task->attachment))->map(function ($image) {
+            $baseUrl = asset('storage'); // Path dasar menuju file di storage Laravel
+            return "<img src='{$baseUrl}/{$image}' alt='Lampiran'>";
+        })->implode('');
+
+        // Buat PDF dengan kop surat (headerImage), task, dan lampiran
+        $pdf = PDF::loadView('pdf.task-completion', compact('task', 'headerImage', 'attachments'));
+
+        // Download file PDF
+        return $pdf->download('berita_acara_pengerjaan_' . $fileName . '.pdf');
     }
 }

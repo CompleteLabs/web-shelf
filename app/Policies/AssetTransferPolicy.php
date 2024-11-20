@@ -39,13 +39,7 @@ class AssetTransferPolicy
      */
     public function update(User $user, AssetTransfer $assetTransfer): bool
     {
-        // Jika pengguna adalah admin, selalu izinkan
-        if ($user->hasRole('super_admin')) {
-            return true;
-        }
-
-        // Jika bukan admin, periksa izin dan document
-        return $user->can('update_asset::transfer') && $assetTransfer->document === null;
+        return $user->can('update_asset::transfer');
     }
 
     /**

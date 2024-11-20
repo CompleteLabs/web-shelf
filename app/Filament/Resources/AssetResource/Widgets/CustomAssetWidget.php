@@ -5,11 +5,13 @@ namespace App\Filament\Resources\AssetResource\Widgets;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Models\Asset;
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class CustomAssetWidget extends BaseWidget
 {
+    use HasWidgetShield;
     protected function getStats(): array
     {
         Log::info('CustomAssetWidget getStats called');

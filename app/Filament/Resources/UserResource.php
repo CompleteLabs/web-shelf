@@ -75,6 +75,7 @@ class UserResource extends Resource
                     Select::make('roles')
                         ->label('Roles')
                         ->relationship('roles', 'name')
+                        ->preload()
                         ->searchable()
                         ->visible($isSuperAdmin),
                 ])->visible($isSuperAdmin)
