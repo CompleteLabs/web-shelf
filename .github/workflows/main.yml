@@ -23,7 +23,7 @@ jobs:
         port: ${{ secrets.VPS_PORT }}
         script: |
           if [[ "${{ github.ref_name }}" == "main" ]]; then
-            cd ~/AppDev/www/production/web-shelf
+            cd ~/cs_shelf
           else
             cd ~/AppDev/www/staging/web-shelf
           fi
