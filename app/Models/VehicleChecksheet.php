@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class VehicleChecksheet extends Model
 {
@@ -44,6 +45,14 @@ class VehicleChecksheet extends Model
         static::saving(function ($vehicleChecksheet) {
             $vehicleChecksheet->calculateRentalDetails();
         });
+
+        static::deleting(function ($vehicleChecksheet) {
+            $vehicleChecksheet->deleteRelatedFiles();
+        });
+
+        static::updating(function ($vehicleChecksheet) {
+            $vehicleChecksheet->deleteOldFiles();
+        });
     }
 
     protected function calculateRentalDetails(): void
@@ -67,6 +76,47 @@ class VehicleChecksheet extends Model
             $this->rental_duration = round($durationInMinutes / 1440, 5); // Menggunakan 5 desimal untuk presisi
         } else {
             $this->rental_duration = 0; // Set default jika data tidak valid
+        }
+    }
+
+    protected function deleteRelatedFiles(): void
+    {
+        // Hapus file departure_photo dan departure_damage_report jika ada
+        if ($this->departure_photo) {
+            Storage::disk('public')->delete($this->departure_photo);
+        }
+
+        if ($this->departure_damage_report) {
+            Storage::disk('public')->delete($this->departure_damage_report);
+        }
+
+        // Hapus file return_photo dan return_damage_report jika ada
+        if ($this->return_photo) {
+            Storage::disk('public')->delete($this->return_photo);
+        }
+
+        if ($this->return_damage_report) {
+            Storage::disk('public')->delete($this->return_damage_report);
+        }
+    }
+
+    protected function deleteOldFiles(): void
+    {
+        // Cek jika file baru diunggah, hapus file lama
+        if ($this->isDirty('departure_photo') && $this->getOriginal('departure_photo')) {
+            Storage::disk('public')->delete($this->getOriginal('departure_photo'));
+        }
+
+        if ($this->isDirty('departure_damage_report') && $this->getOriginal('departure_damage_report')) {
+            Storage::disk('public')->delete($this->getOriginal('departure_damage_report'));
+        }
+
+        if ($this->isDirty('return_photo') && $this->getOriginal('return_photo')) {
+            Storage::disk('public')->delete($this->getOriginal('return_photo'));
+        }
+
+        if ($this->isDirty('return_damage_report') && $this->getOriginal('return_damage_report')) {
+            Storage::disk('public')->delete($this->getOriginal('return_damage_report'));
         }
     }
 }

@@ -14,6 +14,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class VehicleChecksheetResource extends Resource
 {
@@ -76,21 +77,31 @@ class VehicleChecksheetResource extends Resource
                             ->resize(50)
                             ->required()
                             ->label('Foto Keberangkatan')
-                            ->storeFileNamesUsing(function (\Illuminate\Http\UploadedFile $file): string {
-                                return 'scale_' . $file->getClientOriginalName();
-                            })
-                            ->directory('uploads/departure/photos') // Direktori untuk foto keberangkatan
-                            ->visibility('public'),
+                            ->directory('vehiclechecksheet')
+                            ->visibility('public')
+                            ->getUploadedFileNameForStorageUsing(
+                                fn(TemporaryUploadedFile $file, $record) => sprintf(
+                                    'scale_%s_departure_photo_%s.%s',
+                                    $record?->reference_number ?? VehicleChecksheetResource::generateReferenceNumber(),
+                                    now()->format('Ymd_His'),
+                                    $file->getClientOriginalExtension()
+                                )
+                            ),
                         Forms\Components\FileUpload::make('departure_damage_report')
                             ->image()
                             ->resize(50)
                             ->required()
                             ->label('Laporan Kerusakan Saat Keberangkatan')
-                            ->storeFileNamesUsing(function (\Illuminate\Http\UploadedFile $file): string {
-                                return 'scale_' . $file->getClientOriginalName();
-                            })
-                            ->directory('uploads/departure/reports') // Direktori untuk laporan keberangkatan
-                            ->visibility('public'),
+                            ->directory('vehiclechecksheet')
+                            ->visibility('public')
+                            ->getUploadedFileNameForStorageUsing(
+                                fn(TemporaryUploadedFile $file, $record) => sprintf(
+                                    'scale_%s_departure_damage_report_%s.%s',
+                                    $record?->reference_number ?? VehicleChecksheetResource::generateReferenceNumber(),
+                                    now()->format('Ymd_His'),
+                                    $file->getClientOriginalExtension()
+                                )
+                            ),
                     ]),
 
                 // Informasi Pengembalian
@@ -109,21 +120,31 @@ class VehicleChecksheetResource extends Resource
                             ->image()
                             ->resize(50)
                             ->label('Foto Pengembalian')
-                            ->storeFileNamesUsing(function (\Illuminate\Http\UploadedFile $file): string {
-                                return 'scale_' . $file->getClientOriginalName();
-                            })
-                            ->directory('uploads/return/photos') // Direktori untuk foto pengembalian
-                            ->visibility('public'),
+                            ->directory('vehiclechecksheet')
+                            ->visibility('public')
+                            ->getUploadedFileNameForStorageUsing(
+                                fn(TemporaryUploadedFile $file, $record) => sprintf(
+                                    'scale_%s_return_photo_%s.%s',
+                                    $record?->reference_number ?? VehicleChecksheetResource::generateReferenceNumber(),
+                                    now()->format('Ymd_His'),
+                                    $file->getClientOriginalExtension()
+                                )
+                            ),
                         Forms\Components\FileUpload::make('return_damage_report')
                             ->required()
                             ->image()
                             ->resize(50)
                             ->label('Laporan Kerusakan Saat Pengembalian')
-                            ->storeFileNamesUsing(function (\Illuminate\Http\UploadedFile $file): string {
-                                return 'scale_' . $file->getClientOriginalName();
-                            })
-                            ->directory('uploads/return/reports') // Direktori untuk laporan pengembalian
-                            ->visibility('public'),
+                            ->directory('vehiclechecksheet')
+                            ->visibility('public')
+                            ->getUploadedFileNameForStorageUsing(
+                                fn(TemporaryUploadedFile $file, $record) => sprintf(
+                                    'scale_%s_return_damage_report_%s.%s',
+                                    $record?->reference_number ?? VehicleChecksheetResource::generateReferenceNumber(),
+                                    now()->format('Ymd_His'),
+                                    $file->getClientOriginalExtension()
+                                )
+                            ),
                     ])
                     ->hidden(fn($livewire) => $livewire instanceof \Filament\Resources\Pages\CreateRecord),
                 // Informasi Tambahan
