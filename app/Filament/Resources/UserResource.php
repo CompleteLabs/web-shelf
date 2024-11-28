@@ -39,7 +39,7 @@ class UserResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $isSuperAdmin = Auth::user()->hasRole('super_admin');
+        $isSuperAdmin = Auth::user()->hasRole('super_admin') || Auth::user()->hasRole('admin');
 
         return $form
             ->schema([
