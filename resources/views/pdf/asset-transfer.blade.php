@@ -176,7 +176,7 @@
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $detail->asset->category->name }}</td>
                             <td>{{ $detail->asset->brand->name ?? '' }} {{ $detail->asset->type ?? '' }}</td>
-                            <td>{{ $detail->asset->serial_number ?? '' }}</td>
+                            <td>{{ $detail->asset->attributes[0]->attribute_value ?? '' }}</td>
                             <td>{{ $detail->equipment }}</td>
                         </tr>
                     @endforeach

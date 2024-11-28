@@ -11,7 +11,9 @@ class PdfController extends Controller
 {
     public function downloadAssetTransfer($id)
     {
-        $assetTransfer = AssetTransfer::with('fromUser.jobTitle', 'toUser.jobTitle', 'businessEntity', 'details.asset.category', 'details.asset.brand')->findOrFail($id);
+        $assetTransfer = AssetTransfer::with('fromUser.jobTitle', 'toUser.jobTitle', 'businessEntity', 'details.asset.category', 'details.asset.brand', 'details.asset.attributes')->findOrFail($id);
+
+        // dd($assetTransfer);
 
         // Pemetaan status ke singkatan
         $statusMap = [
