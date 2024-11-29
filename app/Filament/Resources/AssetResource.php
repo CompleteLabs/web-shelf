@@ -103,11 +103,31 @@ class AssetResource extends Resource
                                         }
                                     }),
 
+                                    Select::make('brand_id')
+                                    ->translateLabel()
+                                    ->options(Brand::all()->pluck('name', 'id'))
+                                    ->searchable()
+                                    ->required()
+                                    ->createOptionForm([
+                                        TextInput::make('name')
+                                            ->required(),
+                                    ])
+                                    ->createOptionUsing(function ($data) {
+                                        // Create a new AssetLocation using the data from the form
+                                        $brand = Brand::create([
+                                            'name' => $data['name'],
+                                        ]);
+
+                                        // Return the ID of the newly created asset location
+                                        return $brand->id;
+                                    }),
+
                                 // Input untuk nama
                                 TextInput::make('name')
                                     ->label(__('Nama'))
                                     ->required()
-                                    ->maxLength(255),
+                                    ->maxLength(255)
+                                    ->columnSpan(2),
                             ])
                             ->columns(2),
 
