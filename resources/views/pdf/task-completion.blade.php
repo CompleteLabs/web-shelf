@@ -115,11 +115,23 @@
             text-align: justify;
         }
 
-        .attachments img {
-            max-width: 150px;
-            margin-right: 10px;
-            margin-bottom: 10px;
+        .attachments .grid-container {
+            margin-top: 28px;
+            margin-bottom: -28px;
+            width: 100%;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        .attachments .grid-container img {
+            width: 128px;
+            height: 200px;
+            object-fit: contain;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
     </style>
 </head>
 
@@ -136,7 +148,7 @@
 
         <!-- Detail Pengerjaan -->
         <div class="details">
-            <p>Pada hari <strong>{{ $task->updated_at->translatedFormat('l, d F Y H:i') }}</strong>, telah dilakukan pengerjaan berupa:</p>
+            <p>Pada hari <strong>{{ \Carbon\Carbon::parse($task->work_timestamp)->translatedFormat('l, d F Y H:i') }}</strong>, telah dilakukan pengerjaan berupa:</p>
             <table class="details-table">
                 <tr>
                     <td style="width: 22%;">Nama Pekerjaan</td>
@@ -167,8 +179,10 @@
         </div>
 
         <div class="attachments">
-            {!! $attachments !!}
-        </div>
+                <div class="grid-container">
+                    {!! $attachments !!}
+                </div>
+        </div>        
 
         <p>Dengan ini, disampaikan bahwa pengerjaan telah <strong>selesai</strong>.</p>
 

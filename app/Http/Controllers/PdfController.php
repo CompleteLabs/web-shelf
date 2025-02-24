@@ -64,6 +64,11 @@ class PdfController extends Controller
         $pdf = PDF::loadView('pdf.task-completion', compact('task', 'headerImage', 'attachments'));
 
         // Download file PDF
-        return $pdf->download('berita_acara_pengerjaan_' . $fileName . '.pdf');
+        // return $pdf->download('berita_acara_pengerjaan_' . $fileName . '.pdf');
+
+        // Stream PDF untuk preview di browser
+        return $pdf->stream('berita_acara_pengerjaan_' . $fileName . '.pdf');
+
+        // return view('pdf.task-completion', compact('task', 'headerImage', 'attachments'));
     }
 }

@@ -19,4 +19,5 @@ Route::get('/', function () {
 });
 
 Route::get('asset-transfer/{id}/download', [PdfController::class, 'downloadAssetTransfer'])->name('asset-transfer.download');
-Route::get('task-completion/{id}/download', [PdfController::class, 'downloadTaskCompletion'])->name('task-completion.download');;
+Route::get('task-completion/{id}/download', [PdfController::class, 'downloadTaskCompletion'])->name('task-completion.download');
+Route::get('task-completion/{id}/preview', [PdfController::class, 'previewTaskCompletion'])->name('task-completion.preview');

@@ -5,7 +5,9 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\TaskResource\Pages;
 use App\Filament\Resources\TaskResource\RelationManagers;
 use App\Models\Task;
+use DateTime;
 use Filament\Forms;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -48,6 +50,11 @@ class TaskResource extends Resource
                                     ->prefix('Rp ') // Tambahkan prefix 'Rp ' di depan input
                                     ->required(),
                             ]),
+
+                        DateTimePicker::make('work_timestamp')
+                            ->native(false)
+                            ->default(now())
+                            ->required(),
 
                         Textarea::make('description')
                             ->label('Deskripsi')
@@ -125,6 +132,7 @@ class TaskResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('id', 'desc')
             ->filters([
                 //
             ])
