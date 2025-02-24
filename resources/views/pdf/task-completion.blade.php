@@ -117,7 +117,6 @@
 
         .attachments .grid-container {
             margin-top: 28px;
-            margin-bottom: -28px;
             width: 100%;
             padding: 0;
             box-sizing: border-box;
@@ -182,7 +181,7 @@
                 <div class="grid-container">
                     {!! $attachments !!}
                 </div>
-        </div>        
+        </div>
 
         <p>Dengan ini, disampaikan bahwa pengerjaan telah <strong>selesai</strong>.</p>
 
