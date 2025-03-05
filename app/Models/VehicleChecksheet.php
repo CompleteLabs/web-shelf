@@ -18,6 +18,7 @@ class VehicleChecksheet extends Model
         'pic',
         'license_plate',
         'location',
+        'destination',
         'remarks',
         'start_km',
         'departure_time',

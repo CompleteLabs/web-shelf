@@ -53,11 +53,18 @@ class VehicleChecksheetResource extends Resource
                             ->placeholder('Pilih Plat Nomor'),
                         Forms\Components\TextInput::make('pic')
                             ->maxLength(255)
-                            ->label('PIC (Penanggung Jawab)'),
+                            ->label('PIC (Penanggung Jawab)')
+                            ->required(),
                         Forms\Components\TextInput::make('location')
                             ->maxLength(255)
                             ->label('Lokasi Kendaraan')
-                            ->placeholder('Contoh: Depo 1, Workshop, dll.'),
+                            ->placeholder('Contoh: Depo 1, Workshop, dll.')
+                            ->required(),
+                        Forms\Components\TextInput::make('destination')
+                            ->maxLength(255)
+                            ->label('Tujuan')
+                            ->placeholder('Contoh: Depo 1, Workshop, dll.')
+                            ->required(),
                     ]),
 
                 // Informasi Keberangkatan
@@ -171,51 +178,61 @@ class VehicleChecksheetResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('reference_number')
-                    ->searchable(),
+                    ->searchable()
+                    ->label('Nomor Referensi'),
                 Tables\Columns\TextColumn::make('pic')
-                    ->searchable(),
+                    ->searchable()
+                    ->label('PIC'),
                 Tables\Columns\TextColumn::make('license_plate')
-                    ->searchable(),
+                    ->searchable()
+                    ->label('Plat Nomor'),
                 Tables\Columns\TextColumn::make('location')
-                    ->searchable(),
+                    ->searchable()
+                    ->label('Lokasi'),
+                Tables\Columns\TextColumn::make('destination')
+                    ->searchable()
+                    ->label('Tujuan'),
                 Tables\Columns\TextColumn::make('start_km')
                     ->numeric()
-                    ->sortable(),
+                    ->label('Kilometer Awal'),
                 Tables\Columns\TextColumn::make('departure_time')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->label('Waktu Keberangkatan'),
                 ImageColumn::make('departure_photo')
-                    ->checkFileExistence(false),
+                    ->checkFileExistence(false)
+                    ->label('Foto Keberangkatan'),
                 ImageColumn::make('departure_damage_report')
-                    ->checkFileExistence(false),
+                    ->checkFileExistence(false)
+                    ->label('Laporan Kerusakan Keberangkatan'),
                 Tables\Columns\TextColumn::make('end_km')
                     ->numeric()
-                    ->sortable(),
+                    ->label('Kilometer Akhir'),
                 Tables\Columns\TextColumn::make('return_time')
                     ->dateTime()
-                    ->sortable(),
+                    ->label('Waktu Kembali'),
                 ImageColumn::make('return_photo')
-                    ->checkFileExistence(false),
+                    ->checkFileExistence(false)
+                    ->label('Foto Kembali'),
                 ImageColumn::make('return_damage_report')
-                    ->checkFileExistence(false),
+                    ->checkFileExistence(false)
+                    ->label('Laporan Kerusakan Kembali'),
                 Tables\Columns\TextColumn::make('rental_duration')
                     ->numeric()
-                    ->sortable(),
+                    ->label('Durasi Sewa'),
                 Tables\Columns\TextColumn::make('distance_traveled')
                     ->numeric()
-                    ->sortable(),
+                    ->label('Jarak Tempuh'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->label('Tanggal Dibuat'),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->label('Tanggal Diperbarui'),
             ])
             ->filters([
                 //
