@@ -46,8 +46,8 @@ class TaskResource extends Resource
 
                                 TextInput::make('cost')
                                     ->label('Biaya')
-                                    ->numeric() // Mengatur agar input hanya angka
-                                    ->prefix('Rp ') // Tambahkan prefix 'Rp ' di depan input
+                                    ->numeric()
+                                    ->prefix('Rp ')
                                     ->required(),
                             ]),
 
@@ -64,13 +64,22 @@ class TaskResource extends Resource
                             ->label('Lokasi')
                             ->required(),
 
-                        // Select untuk memilih Business Entity
                         Select::make('business_entity_id')
                             ->label('Entitas Bisnis')
-                            ->relationship('businessEntity', 'name') // Relasi ke tabel business_entities
-                            ->searchable() // Bisa mencari
-                            ->preload() // Preload data agar tampil lebih cepat
-                            ->required(), // Wajib diisi
+                            ->relationship('businessEntity', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+
+                        Select::make('user_id')
+                            ->label('PIC')
+                            ->relationship('user', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->default(fn() => auth()->id())
+                            ->disabled(fn() => !auth()->user()->hasRole('super_admin'))
+                            ->dehydrated(true),
                     ]),
 
                 // Vendor Information Section
@@ -109,6 +118,8 @@ class TaskResource extends Resource
                 Tables\Columns\TextColumn::make('cost')
                     ->money('IDR'),
                 Tables\Columns\TextColumn::make('location'),
+                Tables\Columns\TextColumn::make('user_id')
+                    ->label('PIC'),
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status') // Label in Indonesian
                     ->badge() // Enables badge display

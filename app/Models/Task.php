@@ -30,6 +30,11 @@ class Task extends Model
         return $this->belongsTo(BusinessEntity::class);
     }
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
