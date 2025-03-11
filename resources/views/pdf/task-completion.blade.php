@@ -196,7 +196,7 @@
                 <td>
                     <p>Pelaksana</p>
                     <div class="signature-space"></div>
-                    <p><strong>GA</strong></p>
+                    <p><strong>{{ $task->user->name ?? 'GA' }}</strong></p>
                 </td>
             </tr>
         </table>
