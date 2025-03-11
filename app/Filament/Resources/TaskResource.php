@@ -118,8 +118,9 @@ class TaskResource extends Resource
                 Tables\Columns\TextColumn::make('cost')
                     ->money('IDR'),
                 Tables\Columns\TextColumn::make('location'),
-                Tables\Columns\TextColumn::make('user_id')
-                    ->label('PIC'),
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('PIC')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status') // Label in Indonesian
                     ->badge() // Enables badge display
