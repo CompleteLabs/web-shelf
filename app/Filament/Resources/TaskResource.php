@@ -111,6 +111,12 @@ class TaskResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('code')
+                    ->label('Nomor Surat')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('businessEntity.name')
+                    ->label('Badan Usaha')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('vendor.name')
