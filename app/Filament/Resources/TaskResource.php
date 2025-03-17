@@ -21,6 +21,7 @@ use Filament\Infolists\Infolist;
 use Filament\Navigation\MenuItem;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -152,7 +153,7 @@ class TaskResource extends Resource
             ])
             ->defaultSort('id', 'desc')
             ->filters([
-                //
+                SelectFilter::make('businessEntity')->preload()->searchable()->relationship('businessEntity', 'name')->translateLabel(),
             ])
             ->actions([
                 // Group the custom actions together
