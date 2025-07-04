@@ -25,10 +25,13 @@ class PdfController extends Controller
         $status = $statusMap[$assetTransfer->status] ?? 'UNKNOWN';
 
         // Menggunakan nilai dari kolom letterhead, atau default image jika tidak ada
-        $headerImage = $assetTransfer->businessEntity->letterhead
-            ? asset('storage/' . $assetTransfer->businessEntity->letterhead)
-            : asset('images/cvcs_kop.png');
+        // $headerImage = $assetTransfer->businessEntity->letterhead
+        //     ? asset('storage/' . $assetTransfer->businessEntity->letterhead)
+        //     : asset('images/cvcs_kop.png');
 
+        $headerImage = $assetTransfer->businessEntity->letterhead
+            ? storage_path('app/public/' . $assetTransfer->businessEntity->letterhead)
+            : public_path('images/cvcs_kop.png');
 
 
         $letterNumber = $assetTransfer->letter_number;
@@ -40,6 +43,10 @@ class PdfController extends Controller
         $pdf = Pdf::loadView('pdf.asset-transfer', compact('assetTransfer', 'headerImage'));
 
         return $pdf->download($fileName);
+
+        //  return $pdf->stream($fileName);
+
+        // return view('pdf.asset-transfer', compact('assetTransfer', 'headerImage'));
     }
 
     public function downloadTaskCompletion($id)

@@ -79,7 +79,7 @@ class TaskResource extends Resource
                             ->preload()
                             ->required()
                             ->default(fn() => auth()->id())
-                            ->disabled(fn() => !auth()->user()->hasRole('super_admin'))
+                            // ->disabled(fn() => !auth()->user()->hasRole('super_admin'))
                             ->dehydrated(true),
                     ]),
 
@@ -105,6 +105,19 @@ class TaskResource extends Resource
                                     ->placeholder('Masukkan harga terakhir'),
                             ]),
                     ]),
+
+                // Attachment Section
+                Forms\Components\Section::make('Lampiran')
+                    ->schema([
+                        FileUpload::make('document_upload')
+                            ->label('Upload Dokumen')
+                            ->directory('documents') // Define a different directory for documents
+                            ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']) // Allow only document types
+                            ->maxSize(5120) // Set a max size of 5MB
+                            ->required(), // Optionally, limit the number of files (example: 5)
+                    ])
+                    ->columns(1)
+                    ->collapsible(),
             ]);
     }
 

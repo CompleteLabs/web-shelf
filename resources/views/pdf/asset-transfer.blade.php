@@ -122,7 +122,7 @@
         <h2>Nomor: {{ $assetTransfer->letter_number }}</h2>
 
         <div class="details">
-            <p>Pada hari ini, {{ \Carbon\Carbon::parse($assetTransfer->created_at)->translatedFormat('l, d F Y') }},
+            <p>Pada hari ini, {{ \Carbon\Carbon::parse($assetTransfer->transfer_date)->translatedFormat('l, d F Y') }},
                 Karyawan yang bertanda tangan di bawah ini:</p>
             <table class="details-table">
                 <tr>
