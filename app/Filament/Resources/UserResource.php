@@ -2,10 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\AssetResource\RelationManagers\AssetTransfersRelationManager;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
-use App\Filament\Resources\UserResource\RelationManagers\FromAssetTransfersRelationManager;
+use App\Filament\Resources\UserResource\RelationManagers\AssetTransfersRelationManager;
 use App\Models\BusinessEntity;
 use App\Models\JobTitle;
 use App\Models\User;

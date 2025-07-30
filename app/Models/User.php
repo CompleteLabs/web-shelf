@@ -13,6 +13,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Log;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -94,6 +95,7 @@ class User extends Authenticatable implements FilamentUser
             'id'  // Local key di AssetTransfer
         );
     }
+
 
     public function isDuplicate(): bool
     {
