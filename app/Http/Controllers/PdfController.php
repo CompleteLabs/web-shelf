@@ -55,16 +55,22 @@ class PdfController extends Controller
 
         // Menggunakan nilai dari kolom letterhead di entitas bisnis terkait, atau default image jika tidak ada
         $headerImage = $task->businessEntity->letterhead
-            ? asset('storage/' . $task->businessEntity->letterhead)
-            : asset('images/cvcs_kop.png');
+            ? storage_path('app/public/' . $task->businessEntity->letterhead)
+            : public_path('images/cvcs_kop.png');
 
         // Ganti spasi dengan underscore dan ubah jadi huruf kecil semua untuk penamaan file
         $fileName = strtolower(str_replace(' ', '_', $task->name));
 
         // Siapkan lampiran
+        // $attachments = collect(json_decode($task->attachment))->map(function ($image) {
+        //     $baseUrl = asset('storage'); // Path dasar menuju file di storage Laravel
+        //     // $baseUrl = storage_path('app/public/' . $image);
+        //     return "<img src='{$baseUrl}/{$image}' alt='Lampiran'>";
+        // })->implode('');
+
         $attachments = collect(json_decode($task->attachment))->map(function ($image) {
-            $baseUrl = asset('storage'); // Path dasar menuju file di storage Laravel
-            return "<img src='{$baseUrl}/{$image}' alt='Lampiran'>";
+            $imagePath = storage_path('app/public/' . $image);
+            return "<img src='{$imagePath}' alt='Lampiran' style='max-width: 100%; height: auto; margin: 10px 0;'>";
         })->implode('');
 
         // Buat PDF dengan kop surat (headerImage), task, dan lampiran

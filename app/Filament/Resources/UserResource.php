@@ -59,6 +59,7 @@ class UserResource extends Resource
                 Card::make([
                     TextInput::make('username')
                         ->maxLength(255)
+                        ->unique(User::class, 'username', ignoreRecord: true)
                         ->visible($isSuperAdmin),
                     TextInput::make('email')
                         ->maxLength(255)

@@ -114,7 +114,8 @@ class TaskResource extends Resource
                             ->directory('documents') // Define a different directory for documents
                             ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']) // Allow only document types
                             ->maxSize(5120) // Set a max size of 5MB
-                            ->required(), // Optionally, limit the number of files (example: 5)
+                            ->required() // Optionally, limit the number of files (example: 5)
+                            ->hiddenOn('create'),
                     ])
                     ->columns(1)
                     ->collapsible(),
