@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\AssetCondition;
+use App\Enums\NbhStatus;
 use App\Models\AssetLocation;
 use App\Models\Brand;
 use App\Models\BusinessEntity;
@@ -44,6 +46,11 @@ class AssetFactory extends Factory
         $brand = $this->faker->randomElement(array_keys($brandsAndModels[$category]));
         $model = $this->faker->randomElement($brandsAndModels[$category][$brand]);
 
+        $condition = $this->faker->randomElement(AssetCondition::cases());
+        $nbhStatus = $condition === AssetCondition::Available || $condition === AssetCondition::Transferred
+            ? NbhStatus::None
+            : $this->faker->randomElement([NbhStatus::Pending, NbhStatus::Resolved]);
+
         return [
             'purchase_date' => $this->faker->date(),
             'business_entity_id' => BusinessEntity::inRandomOrder()->first()->id ?? BusinessEntity::factory(),
@@ -56,7 +63,15 @@ class AssetFactory extends Factory
             'imei2' => $category === 'BARANG ELEKTRONIK' ? $this->faker->unique()->numerify('###############') : null,
             'item_price' => $this->faker->numberBetween(1000, 10000),
             'asset_location_id' => AssetLocation::inRandomOrder()->first()->id ?? AssetLocation::factory(),
-            'is_available' => $this->faker->boolean(),
+            'condition_status' => $condition->value,
+            'nbh_status' => $nbhStatus->value,
+            'nbh_reported_at' => in_array($condition, [AssetCondition::Lost, AssetCondition::Damaged], true)
+                ? $this->faker->date()
+                : null,
+            'audit_document_path' => null,
+            'nbh_document_path' => $nbhStatus === NbhStatus::Resolved ? 'nbh/sample.pdf' : null,
+            'nbh_notes' => $nbhStatus === NbhStatus::Resolved ? $this->faker->sentence() : null,
+            'is_available' => $condition === AssetCondition::Available,
         ];
     }
 }

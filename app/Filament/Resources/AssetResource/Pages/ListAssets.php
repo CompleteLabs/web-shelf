@@ -37,7 +37,10 @@ class ListAssets extends ListRecords
                             Column::make('imei2')->heading('IMEI 2'),
                             Column::make('item_price')->heading('Harga Aset'),
                             Column::make('assetLocation.name')->heading('Lokasi Aset'),
-                            Column::make('is_available')->heading('Status'),
+                            Column::make('condition_status_label')->heading('Status Aset'),
+                            Column::make('nbh_status_label')->heading('Status NBH'),
+                            Column::make('nbhResponsible.name')->heading('Penanggung Jawab NBH'),
+                            Column::make('nbh_reported_at')->heading('Tanggal Insiden'),
                             Column::make('recipient.name')->heading('Penerima Aset'),
                             Column::make('recipientBusinessEntity.name')->heading('Badan Usaha Penerima'),
                         ])

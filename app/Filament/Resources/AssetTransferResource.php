@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\AssetCondition;
 use App\Filament\Resources\AssetTransferResource\Pages;
 use App\Models\Asset;
 use App\Models\AssetTransfer;
@@ -88,13 +89,18 @@ class AssetTransferResource extends Resource
 
                                         if ($fromUserId) {
                                             $user = User::find($fromUserId);
+
                                             if ($user && $user->hasRole('general_affair')) {
-                                                // If the user has 'general_affair' role, only select available assets
-                                                $assets->where('is_available', 1);
-                                                $details = [['asset_id' => '', 'equipment' => '']]; // reset the details repeater with one empty entry
+                                                // GA can dispatch any asset that is currently available
+                                                $assets->where('condition_status', AssetCondition::Available->value);
+                                                $details = [['asset_id' => '', 'equipment' => '']];
                                             } else {
-                                                // If the user does not have 'general_affair' role, restrict to assets with recipient_id = from_user_id
-                                                $assets->where('recipient_id', $fromUserId);
+                                                $assets->where('recipient_id', $fromUserId)
+                                                    ->whereNotIn('condition_status', [
+                                                        AssetCondition::Lost->value,
+                                                        AssetCondition::Damaged->value,
+                                                    ]);
+
                                                 $details = $assets->get()->map(function ($asset) {
                                                     return ['asset_id' => $asset->id, 'equipment' => ''];
                                                 })->toArray();
@@ -183,9 +189,13 @@ class AssetTransferResource extends Resource
                                 if ($fromUserId) {
                                     $user = User::find($fromUserId);
                                     if ($user && $user->hasRole('general_affair')) {
-                                        $query->where('is_available', 1);
+                                        $query->where('condition_status', AssetCondition::Available->value);
                                     } else {
-                                        $query->where('recipient_id', $fromUserId);
+                                        $query->where('recipient_id', $fromUserId)
+                                            ->whereNotIn('condition_status', [
+                                                AssetCondition::Lost->value,
+                                                AssetCondition::Damaged->value,
+                                            ]);
                                     }
                                 }
 

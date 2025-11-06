@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\AssetTransferResource\Pages;
 
+use App\Enums\AssetCondition;
+use App\Enums\NbhStatus;
 use App\Filament\Resources\AssetTransferResource;
 use App\Models\AssetTransfer;
 use Filament\Actions;
@@ -23,7 +25,13 @@ class EditAssetTransfer extends EditRecord
             $asset = $detail->asset;
             $asset->recipient_id = $record->to_user_id;
             $asset->recipient_business_entity_id = $record->business_entity_id;
-            $asset->is_available = $hasGeneralAffairRole ? true : false;
+            $asset->condition_status = $hasGeneralAffairRole
+                ? AssetCondition::Available
+                : AssetCondition::Transferred;
+            if (in_array($asset->condition_status, [AssetCondition::Available, AssetCondition::Transferred], true)) {
+                $asset->nbh_status = NbhStatus::None;
+                $asset->nbh_responsible_user_id = null;
+            }
             $asset->save();
         }
     }

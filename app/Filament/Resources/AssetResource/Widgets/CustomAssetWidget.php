@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AssetResource\Widgets;
 
+use App\Enums\AssetCondition;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Models\Asset;
@@ -15,14 +16,18 @@ class CustomAssetWidget extends BaseWidget
     protected function getStats(): array
     {
         Log::info('CustomAssetWidget getStats called');
-        $availableUnits = Asset::where('is_available', true)->count();
-        $transferredUnits = Asset::where('is_available', false)->count();
+        $availableUnits = Asset::where('condition_status', AssetCondition::Available->value)->count();
+        $transferredUnits = Asset::where('condition_status', AssetCondition::Transferred->value)->count();
+        $lostUnits = Asset::where('condition_status', AssetCondition::Lost->value)->count();
+        $damagedUnits = Asset::where('condition_status', AssetCondition::Damaged->value)->count();
         $totalAssets = Asset::count();
         $totalValue = Asset::sum(DB::raw('item_price * qty'));
 
         return [
             Stat::make(__('Aset Tersedia'), $availableUnits)->color('success'),
             Stat::make(__('Aset Digunakan'), $transferredUnits)->color('warning'),
+            Stat::make(__('Aset Hilang'), $lostUnits)->color('danger'),
+            Stat::make(__('Aset Rusak'), $damagedUnits)->color('danger'),
             Stat::make(__('Jumlah Aset'), $totalAssets)->color('primary'),
             Stat::make(__('Jumlah Nilai Aset'), 'IDR ' . number_format($totalValue))->color('primary'),
         ];

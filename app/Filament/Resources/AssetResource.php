@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\AssetCondition;
+use App\Enums\NbhStatus;
 use App\Filament\Resources\AssetResource\Pages;
 use App\Filament\Resources\AssetResource\RelationManagers\AssetTransfersRelationManager;
 use App\Models\Asset;
@@ -16,11 +18,11 @@ use Filament\Forms\Components\Card;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid as ComponentsGrid;
 use Filament\Infolists\Components\ImageEntry;
@@ -34,6 +36,7 @@ use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Collection;
 
 class AssetResource extends Resource
@@ -238,25 +241,117 @@ class AssetResource extends Resource
                             }),
 
 
-                        // Super Admin
                         Card::make()
                             ->schema([
-                                Toggle::make('is_available')
-                                    ->label('Status Ketersediaan')
-                                    ->inline(false)
-                                    ->onColor('success')
-                                    ->offColor('danger'),
+                                Placeholder::make('lifecycle_hint')
+                                    ->label('Panduan')
+                                    ->content('Kelola kondisi fisik aset serta dokumen NBH bila terjadi kehilangan atau kerusakan.')
+                                    ->columnSpanFull()
+                                    ->extraAttributes([
+                                        'class' => 'text-sm text-gray-500',
+                                    ]),
+                                Select::make('condition_status')
+                                    ->label('Status Kondisi')
+                                    ->options(AssetCondition::options())
+                                    ->default(AssetCondition::Available->value)
+                                    ->required()
+                                    ->reactive()
+                                    ->helperText('Ubah ke “Hilang” atau “Rusak” ketika ditemukan insiden.')
+                                    ->columnSpan(1)
+                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                        if (in_array($state, [AssetCondition::Lost->value, AssetCondition::Damaged->value], true)) {
+                                            if (!$get('nbh_status') || $get('nbh_status') === NbhStatus::None->value) {
+                                                $set('nbh_status', NbhStatus::Pending->value);
+                                            }
+                                        } else {
+                                            $set('nbh_status', NbhStatus::None->value);
+                                            $set('nbh_responsible_user_id', null);
+                                            $set('nbh_reported_at', null);
+                                        }
+                                    }),
+                                Select::make('nbh_status')
+                                    ->label('Status NBH')
+                                    ->options(function (callable $get): array {
+                                        $condition = $get('condition_status');
+
+                                        if (in_array($condition, [AssetCondition::Lost->value, AssetCondition::Damaged->value], true)) {
+                                            return collect(NbhStatus::cases())
+                                                ->reject(fn(NbhStatus $status) => $status === NbhStatus::None)
+                                                ->mapWithKeys(fn(NbhStatus $status) => [$status->value => $status->label()])
+                                                ->toArray();
+                                        }
+
+                                        return NbhStatus::options();
+                                    })
+                                    ->reactive()
+                                    ->helperText('Perbarui saat proses penggantian selesai.')
+                                    ->columnSpan(1)
+                                    ->visible(fn(callable $get) => in_array($get('condition_status'), [AssetCondition::Lost->value, AssetCondition::Damaged->value], true) || $get('nbh_status') !== NbhStatus::None->value),
+                                DatePicker::make('nbh_reported_at')
+                                    ->label('Tanggal Insiden')
+                                    ->helperText('Tanggal ditemukannya aset hilang atau rusak.')
+                                    ->columnSpan(1)
+                                    ->visible(fn(callable $get) => in_array($get('condition_status'), [AssetCondition::Lost->value, AssetCondition::Damaged->value], true) || $get('nbh_status') !== NbhStatus::None->value),
+                                Select::make('nbh_responsible_user_id')
+                                    ->label('Penanggung Jawab')
+                                    ->options(User::orderBy('name')->pluck('name', 'id'))
+                                    ->searchable()
+                                    ->helperText('Pihak yang bertanggung jawab atas NBH.')
+                                    ->columnSpan(1)
+                                    ->required(fn(callable $get) => $get('nbh_status') === NbhStatus::Resolved->value)
+                                    ->visible(fn(callable $get) => in_array($get('condition_status'), [AssetCondition::Lost->value, AssetCondition::Damaged->value], true) || $get('nbh_status') === NbhStatus::Resolved->value),
+                                FileUpload::make('audit_document_path')
+                                    ->label('Dokumen Audit')
+                                    ->directory('asset-audit')
+                                    ->preserveFilenames()
+                                    ->maxSize(4096)
+                                    ->acceptedFileTypes(['application/pdf', 'image/*'])
+                                    ->helperText('Unggah berita acara atau bukti audit (PDF/JPG, maks 4 MB). Wajib saat NBH selesai.')
+                                    ->columnSpan(2)
+                                    ->required(fn(callable $get) => $get('nbh_status') === NbhStatus::Resolved->value)
+                                    ->visible(fn(callable $get) => in_array($get('condition_status'), [AssetCondition::Lost->value, AssetCondition::Damaged->value], true)),
+                                FileUpload::make('nbh_document_path')
+                                    ->label('Nota Barang Hilang (NBH)')
+                                    ->directory('asset-nbh')
+                                    ->preserveFilenames()
+                                    ->maxSize(4096)
+                                    ->acceptedFileTypes(['application/pdf', 'image/*'])
+                                    ->helperText('Unggah bukti penggantian atau nota NBH selesai.')
+                                    ->columnSpan(2)
+                                    ->required(fn(callable $get) => $get('nbh_status') === NbhStatus::Resolved->value)
+                                    ->visible(fn(callable $get) => $get('nbh_status') === NbhStatus::Resolved->value),
+                                Textarea::make('nbh_notes')
+                                    ->label('Catatan NBH')
+                                    ->placeholder('Masukkan kronologi singkat, hasil audit, atau tindak lanjut.')
+                                    ->rows(3)
+                                    ->columnSpanFull()
+                                    ->visible(fn(callable $get) => in_array($get('condition_status'), [AssetCondition::Lost->value, AssetCondition::Damaged->value], true) || $get('nbh_status') !== NbhStatus::None->value),
+                            ])
+                            ->columns(3)
+                            ->visible(fn() => auth()->user()?->hasAnyRole(['super_admin', 'general_affair']) ?? false),
+
+                        Card::make()
+                            ->schema([
+                                Placeholder::make('recipient_hint')
+                                    ->label('Pengaturan Penerima')
+                                    ->content('Opsional: sesuaikan penerima aset secara manual untuk kasus khusus.')
+                                    ->columnSpanFull()
+                                    ->extraAttributes([
+                                        'class' => 'text-sm text-gray-500',
+                                    ]),
                                 Select::make('recipient_business_entity_id')
                                     ->translateLabel()
                                     ->options(BusinessEntity::orderBy('name')->pluck('name', 'id'))
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->helperText('Kosongkan jika tetap mengikuti data transfer terakhir.'),
                                 Select::make('recipient_id')
                                     ->translateLabel()
                                     ->options(User::orderBy('name')->pluck('name', 'id'))
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->helperText('Pilih pemegang aset saat ini.'),
                             ])
-                            ->columns(3)
-                            ->visible(fn() => auth()->user()->hasRole('super_admin')),
+                            ->columns(2)
+                            ->visible(fn() => auth()->user()?->hasRole('super_admin')),
                     ])
                     ->columnSpan(2),
 
@@ -344,21 +439,23 @@ class AssetResource extends Resource
                     ->translateLabel()
                     ->badge(),
                 TextColumn::make('assetLocation.name')->translateLabel()->sortable()->searchable(),
-                TextColumn::make('is_available')
-                    ->label('Status')
+                TextColumn::make('condition_status_label')
+                    ->label('Status Aset')
                     ->badge()
-                    ->color(fn(string $state): string => $state == 'Tersedia' ? 'success' : 'warning')
-                    ->formatStateUsing(fn(string $state): string => $state),
+                    ->color(fn($state, Asset $record): string => $record->condition_status_color ?? 'secondary'),
+                TextColumn::make('nbh_status_label')
+                    ->label('Status NBH')
+                    ->badge()
+                    ->color(fn($state, Asset $record): string => $record->nbh_status_color ?? 'secondary'),
             ])
             ->filters([
                 SelectFilter::make('businessEntity')->relationship('businessEntity', 'name')->translateLabel(),
-                SelectFilter::make('is_available')
-                    ->translateLabel()
-                    ->options([
-                        '1' => 'Tersedia',
-                        '0' => 'Transfer',
-                    ])
-                    ->translateLabel(),
+                SelectFilter::make('condition_status')
+                    ->label('Status Aset')
+                    ->options(AssetCondition::options()),
+                SelectFilter::make('nbh_status')
+                    ->label('Status NBH')
+                    ->options(NbhStatus::options()),
                 SelectFilter::make('assetLocation')->relationship('assetLocation', 'name')->translateLabel(),
             ])
             ->actions([
@@ -410,22 +507,22 @@ class AssetResource extends Resource
     {
         return $infolist
             ->schema([
-                ComponentsSection::make('💼 Informasi Aset')
+                ComponentsSection::make('Informasi Aset')
                     ->schema([
                         ComponentsGrid::make(2)
                             ->schema([
                                 TextEntry::make('name')
-                                    ->label(__('📝 Nama Aset'))
+                                    ->label(__('Nama Aset'))
                                     ->columnSpan(2)
                                     ->extraAttributes([
                                         'style' => 'font-weight:bold; font-size:1.2em; color:#333;',
                                     ]),
                                 TextEntry::make('category.name')
-                                    ->label(__('📂 Kategori')),
+                                    ->label(__('Kategori')),
                                 TextEntry::make('brand.name')
-                                    ->label(__('🏷️ Merek')),
+                                    ->label(__('Merek')),
                                 TextEntry::make('type')
-                                    ->label(__('🔖 Tipe')),
+                                    ->label(__('Tipe')),
                                 ImageEntry::make('image')
                                     ->label(__('Gambar Aset'))
                                     ->width('100px')
@@ -435,7 +532,7 @@ class AssetResource extends Resource
                     ->columnSpan(2)
                     ->grow(true),
 
-                ComponentsSection::make('⚙️ Atribut Khusus')
+                ComponentsSection::make('Atribut Khusus')
                     ->schema([
                         ComponentsGrid::make(2)
                             ->schema(function ($record) {
@@ -448,50 +545,92 @@ class AssetResource extends Resource
                             }),
                     ]),
 
-                ComponentsSection::make('🛒 Detail Pembelian')
+                ComponentsSection::make('Detail Pembelian')
                     ->schema([
                         ComponentsGrid::make(4)
                             ->schema([
                                 TextEntry::make('purchase_date')
-                                    ->label(__('📅 Tanggal Pembelian'))
+                                    ->label(__('Tanggal Pembelian'))
                                     ->formatStateUsing(fn($state) => \Carbon\Carbon::parse($state)->format('d/m/Y'))
                                     ->extraAttributes(['style' => 'color:#007BFF;']),
                                 TextEntry::make('item_price')
-                                    ->label(__('💰 Harga'))
+                                    ->label(__('Harga'))
                                     ->formatStateUsing(fn($state) => 'Rp ' . number_format($state, 0, ',', '.'))
                                     ->extraAttributes([
                                         'style' => 'color:#28a745; font-weight:bold;',
                                     ]),
                                 TextEntry::make('qty')
-                                    ->label(__('📦 Kuantitas')),
+                                    ->label(__('Kuantitas')),
                                 TextEntry::make('businessEntity.name')
-                                    ->label(__('🏢 Entitas Bisnis')),
+                                    ->label(__('Entitas Bisnis')),
                             ]),
                     ]),
 
-                ComponentsSection::make('🏠 Ketersediaan')
+                ComponentsSection::make('Status & NBH')
                     ->schema([
-                        ComponentsGrid::make(4)
+                        ComponentsGrid::make(3)
                             ->schema([
-                                TextEntry::make('assetLocation.name')
-                                    ->label(__('📍 Lokasi Aset')),
-                                TextEntry::make('recipient.name')
-                                    ->label(__('👤 Pemegang Aset')),
-                                TextEntry::make('is_available')
-                                    ->label(__('🟢 Status Ketersediaan'))
-                                    ->formatStateUsing(fn(string $state): string => $state == 'Tersedia' ? 'Tersedia' : 'Transfer')
+                                TextEntry::make('condition_status_label')
+                                    ->label(__('Status Aset'))
                                     ->badge()
-                                    ->color(fn(string $state): string => $state == 'Tersedia' ? 'success' : 'warning')
+                                    ->color(fn($state, Asset $record): string => $record->condition_status_color ?? 'secondary')
                                     ->extraAttributes(['style' => 'font-weight:bold;']),
-                                TextEntry::make('recipient.name')
-                                    ->label(__('✅ Status Validasi'))
+                                TextEntry::make('nbh_status_label')
+                                    ->label(__('Status NBH'))
                                     ->badge()
-                                    ->color(fn($record) => $record->checkValidRecipient() ? 'success' : 'danger')
-                                    ->formatStateUsing(function ($record) {
-                                        return $record->checkValidRecipient() ? 'Valid' : 'Tidak Valid';
-                                    }),
+                                    ->color(fn($state, Asset $record): string => $record->nbh_status_color ?? 'secondary'),
+                                TextEntry::make('validasi_status')
+                                    ->label(__('Status Validasi'))
+                                    ->badge()
+                                    ->color(fn($state, Asset $record): string => $record->checkValidRecipient() ? 'success' : 'danger')
+                                    ->state(fn(Asset $record): string => $record->checkValidRecipient() ? 'Valid' : 'Tidak Valid'),
                             ]),
+                        ComponentsGrid::make(2)
+                            ->schema([
+                                TextEntry::make('asset_location_display')
+                                    ->label(__('Lokasi Aset'))
+                                    ->state(fn(Asset $record): string => $record->assetLocation?->name ?? '-'),
+                                TextEntry::make('recipient_display')
+                                    ->label(__('Pemegang Aset'))
+                                    ->state(fn(Asset $record): string => $record->recipient?->name ?? '-'),
+                            ]),
+                        ComponentsGrid::make(2)
+                            ->schema([
+                                TextEntry::make('nbh_reported_at_display')
+                                    ->label(__('Tanggal Insiden'))
+                                    ->state(fn(Asset $record): string => $record->nbh_status instanceof NbhStatus && $record->nbh_status !== NbhStatus::None
+                                        ? optional($record->nbh_reported_at)?->format('d M Y') ?? '-'
+                                        : '-'),
+                                TextEntry::make('nbh_responsible_display')
+                                    ->label(__('Penanggung Jawab'))
+                                    ->state(fn(Asset $record): string => $record->nbh_status instanceof NbhStatus && $record->nbh_status !== NbhStatus::None
+                                        ? $record->nbhResponsible?->name ?? '-'
+                                        : '-'),
+                            ])
+                            ->visible(fn(Asset $record): bool => $record->nbh_status instanceof NbhStatus && $record->nbh_status !== NbhStatus::None),
+                        TextEntry::make('nbh_notes')
+                            ->label(__('Catatan NBH'))
+                            ->columnSpanFull()
+                            ->visible(fn(Asset $record): bool => filled($record->nbh_notes)),
                     ]),
+
+                ComponentsSection::make('Dokumen Pendukung')
+                    ->schema([
+                        ComponentsGrid::make(2)
+                            ->schema([
+                                TextEntry::make('audit_document_path')
+                                    ->label(__('Dokumen Audit'))
+                                    ->url(fn(Asset $record) => $record->audit_document_path ? Storage::url($record->audit_document_path) : null, true)
+                                    ->openUrlInNewTab()
+                                    ->visible(fn(Asset $record): bool => filled($record->audit_document_path)),
+                                TextEntry::make('nbh_document_path')
+                                    ->label(__('Nota Barang Hilang'))
+                                    ->url(fn(Asset $record) => $record->nbh_document_path ? Storage::url($record->nbh_document_path) : null, true)
+                                    ->openUrlInNewTab()
+                                    ->visible(fn(Asset $record): bool => filled($record->nbh_document_path)),
+                            ]),
+                    ])
+                    ->visible(fn(Asset $record): bool => filled($record->audit_document_path) || filled($record->nbh_document_path)),
             ])
             ->columns(1); // Atur agar semua bagian ditampilkan secara vertikal (atas-bawah)
     }
