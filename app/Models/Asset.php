@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\AssetTransferDetail;
+use App\Models\AssetTransfer;
+use App\Models\User;
 
 class Asset extends Model
 {
@@ -226,41 +229,45 @@ class Asset extends Model
         }
     }
 
-    public function checkValidRecipient()
+    protected ?bool $cachedValidRecipientResult = null;
+
+    public function checkValidRecipient(): bool
     {
-        // Ambil transfer terbaru terkait dengan asset ini dari tabel asset_transfer_details
+        if ($this->cachedValidRecipientResult !== null) {
+            return $this->cachedValidRecipientResult;
+        }
+
+        $this->cachedValidRecipientResult = $this->performValidRecipientCheck();
+        return $this->cachedValidRecipientResult;
+    }
+
+    protected function performValidRecipientCheck(): bool
+    {
         $latestTransferDetail = AssetTransferDetail::where('asset_id', $this->id)
             ->latest()
             ->first();
 
-        // Jika tidak ada transfer detail, anggap valid (karena tidak ada data untuk dibandingkan)
         if (!$latestTransferDetail) {
             return true;
         }
 
-        // Ambil transfer terkait dari tabel asset_transfers
         $latestTransfer = AssetTransfer::find($latestTransferDetail->asset_transfer_id);
 
-        // Jika tidak ada transfer terkait, anggap valid
         if (!$latestTransfer) {
             return true;
         }
 
-        // Cek apakah recipient_id di assets sama dengan to_user_id di asset_transfers
         if ($this->recipient_id != $latestTransfer->to_user_id) {
             return false;
         }
 
-        // Ambil user recipient berdasarkan recipient_id
-        $recipient = User::find($this->recipient_id);
+        $recipient = $this->recipient ?? User::find($this->recipient_id);
 
-        // Jika recipient tidak ditemukan, anggap tidak valid
         if (!$recipient) {
             return false;
         }
 
-        // Cek apakah recipient memiliki role 'general_affair'
-        $hasGeneralAffairRole = $recipient->hasRole('general_affair'); // Asumsi ada metode hasRole()
+        $hasGeneralAffairRole = $recipient->hasRole('general_affair');
 
         if (in_array($this->condition_status, [AssetCondition::Lost, AssetCondition::Damaged], true)) {
             if ($this->nbh_status === NbhStatus::None) {
@@ -275,17 +282,14 @@ class Asset extends Model
             return true;
         }
 
-        // Jika recipient memiliki role 'general_affair', status aset harus available
         if ($hasGeneralAffairRole && $this->condition_status !== AssetCondition::Available) {
             return false;
         }
 
-        // Jika recipient tidak memiliki role 'general_affair', status aset harus transferred
         if (!$hasGeneralAffairRole && $this->condition_status !== AssetCondition::Transferred) {
             return false;
         }
 
-        // Jika semua pengecekan valid, kembalikan true
         return true;
     }
 

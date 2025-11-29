@@ -34,6 +34,7 @@ use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Filament\Infolists\Components\RepeatableEntry;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class AssetTransferResource extends Resource
 {
@@ -57,7 +58,7 @@ class AssetTransferResource extends Resource
                                     ->extraInputAttributes(['readonly' => true]),
                                 Select::make('business_entity_id')
                                     ->translateLabel()
-                                    ->options(BusinessEntity::all()->pluck('name', 'id'))
+                                    ->options(fn () => Cache::remember('business_entity_options', 300, fn () => BusinessEntity::orderBy('name')->pluck('name', 'id')))
                                     ->searchable()
                                     ->required()
                                     ->reactive()
@@ -133,11 +134,11 @@ class AssetTransferResource extends Resource
                                             ->required()
                                             ->maxLength(255),
                                         Select::make('business_entity_id')
-                                            ->options(BusinessEntity::all()->pluck('name', 'id')->toArray())
+                                            ->options(fn () => Cache::remember('business_entity_options', 300, fn () => BusinessEntity::orderBy('name')->pluck('name', 'id')->toArray()))
                                             ->translateLabel()
                                             ->searchable(),
                                         Select::make('job_title_id')
-                                            ->options(JobTitle::all()->pluck('title', 'id')->toArray())
+                                            ->options(fn () => Cache::remember('job_title_options', 300, fn () => JobTitle::orderBy('title')->pluck('title', 'id')->toArray()))
                                             ->translateLabel()
                                             ->searchable(),
                                     ])
@@ -147,8 +148,7 @@ class AssetTransferResource extends Resource
                                             'business_entity_id' => $data['business_entity_id'],
                                             'job_title_id' => $data['job_title_id'],
                                         ]);
-
-                                        // Return the ID of the newly created user
+                                        Cache::forget('user_options');
                                         return $user->id;
                                     })
                                     ->searchable()

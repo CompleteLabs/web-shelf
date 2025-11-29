@@ -37,6 +37,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Collection;
 
 class AssetResource extends Resource
@@ -45,19 +46,22 @@ class AssetResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
 
-    public static function getCategoryOptions()
+    public static function getCategoryOptions(): array
     {
-        $categories = Category::with('children')->get();
+        return Cache::remember('asset_category_options', 300, function () {
+            $categories = Category::whereNull('parent_id')
+                ->with('children:id,name,parent_id')
+                ->get(['id', 'name']);
 
-        $options = [];
-        foreach ($categories as $category) {
-            if ($category->children->isNotEmpty()) {
-                $subcategories = $category->children->pluck('name', 'id')->toArray();
-                $options[$category->name] = $subcategories;
+            $options = [];
+            foreach ($categories as $category) {
+                if ($category->children->isNotEmpty()) {
+                    $options[$category->name] = $category->children->pluck('name', 'id')->toArray();
+                }
             }
-        }
 
-        return $options;
+            return $options;
+        });
     }
 
     // Fungsi helper untuk mendapatkan tipe atribut
@@ -108,7 +112,7 @@ class AssetResource extends Resource
 
                                     Select::make('brand_id')
                                     ->translateLabel()
-                                    ->options(Brand::all()->pluck('name', 'id'))
+                                    ->options(fn () => Cache::remember('brand_options', 300, fn () => Brand::orderBy('name')->pluck('name', 'id')))
                                     ->searchable()
                                     ->required()
                                     ->createOptionForm([
@@ -116,12 +120,10 @@ class AssetResource extends Resource
                                             ->required(),
                                     ])
                                     ->createOptionUsing(function ($data) {
-                                        // Create a new AssetLocation using the data from the form
                                         $brand = Brand::create([
                                             'name' => $data['name'],
                                         ]);
-
-                                        // Return the ID of the newly created asset location
+                                        Cache::forget('brand_options');
                                         return $brand->id;
                                     }),
 
@@ -294,7 +296,7 @@ class AssetResource extends Resource
                                     ->visible(fn(callable $get) => in_array($get('condition_status'), [AssetCondition::Lost->value, AssetCondition::Damaged->value], true) || $get('nbh_status') !== NbhStatus::None->value),
                                 Select::make('nbh_responsible_user_id')
                                     ->label('Penanggung Jawab')
-                                    ->options(User::orderBy('name')->pluck('name', 'id'))
+                                    ->options(fn () => Cache::remember('user_options', 300, fn () => User::orderBy('name')->pluck('name', 'id')))
                                     ->searchable()
                                     ->helperText('Pihak yang bertanggung jawab atas NBH.')
                                     ->columnSpan(1)
@@ -341,12 +343,12 @@ class AssetResource extends Resource
                                     ]),
                                 Select::make('recipient_business_entity_id')
                                     ->translateLabel()
-                                    ->options(BusinessEntity::orderBy('name')->pluck('name', 'id'))
+                                    ->options(fn () => Cache::remember('business_entity_options', 300, fn () => BusinessEntity::orderBy('name')->pluck('name', 'id')))
                                     ->searchable()
                                     ->helperText('Kosongkan jika tetap mengikuti data transfer terakhir.'),
                                 Select::make('recipient_id')
                                     ->translateLabel()
-                                    ->options(User::orderBy('name')->pluck('name', 'id'))
+                                    ->options(fn () => Cache::remember('user_options', 300, fn () => User::orderBy('name')->pluck('name', 'id')))
                                     ->searchable()
                                     ->helperText('Pilih pemegang aset saat ini.'),
                             ])
@@ -364,7 +366,7 @@ class AssetResource extends Resource
                             ->required(),
                         Select::make('business_entity_id')
                             ->translateLabel()
-                            ->options(BusinessEntity::orderBy('name')->pluck('name', 'id'))
+                            ->options(fn () => Cache::remember('business_entity_options', 300, fn () => BusinessEntity::orderBy('name')->pluck('name', 'id')))
                             ->searchable()
                             ->required(),
                         TextInput::make('item_price')
@@ -377,7 +379,7 @@ class AssetResource extends Resource
                             ->numeric(),
                         Select::make('asset_location_id')
                             ->translateLabel()
-                            ->options(AssetLocation::orderBy('name')->pluck('name', 'id'))
+                            ->options(fn () => Cache::remember('asset_location_options', 300, fn () => AssetLocation::orderBy('name')->pluck('name', 'id')))
                             ->searchable()
                             ->createOptionForm([
                                 TextInput::make('name')
@@ -392,14 +394,12 @@ class AssetResource extends Resource
                                     ->maxLength(255),
                             ])
                             ->createOptionUsing(function ($data) {
-                                // Create a new AssetLocation using the data from the form
                                 $assetLocation = AssetLocation::create([
                                     'name' => $data['name'],
                                     'address' => $data['address'],
                                     'description' => $data['description'],
                                 ]);
-
-                                // Return the ID of the newly created asset location
+                                Cache::forget('asset_location_options');
                                 return $assetLocation->id;
                             }),
                         FileUpload::make('image')
@@ -536,11 +536,11 @@ class AssetResource extends Resource
                     ->schema([
                         ComponentsGrid::make(2)
                             ->schema(function ($record) {
-                                // Pastikan $record memiliki relasi 'attributes'
+                                $record->load('attributes.customAttribute');
                                 return $record->attributes->map(function ($attribute) {
                                     return TextEntry::make("custom_attribute_{$attribute->custom_attribute_id}")
-                                        ->label(optional($attribute->customAttribute)->name ?? 'Unknown Attribute') // Langsung mengambil nama dari customAttribute
-                                        ->state($attribute->attribute_value); // Nilai dari attribute_value
+                                        ->label($attribute->customAttribute?->name ?? 'Unknown Attribute')
+                                        ->state($attribute->attribute_value);
                                 })->toArray();
                             }),
                     ]),
@@ -582,7 +582,7 @@ class AssetResource extends Resource
                                 TextEntry::make('validasi_status')
                                     ->label(__('Status Validasi'))
                                     ->badge()
-                                    ->color(fn($state, Asset $record): string => $record->checkValidRecipient() ? 'success' : 'danger')
+                                    ->color(fn($state): string => $state === 'Valid' ? 'success' : 'danger')
                                     ->state(fn(Asset $record): string => $record->checkValidRecipient() ? 'Valid' : 'Tidak Valid'),
                             ]),
                         ComponentsGrid::make(2)

@@ -41,30 +41,32 @@ class SendScheduledNotifications extends Command
 
     protected function handleRelativeDateNotification($attribute)
     {
-        // Ambil semua AssetAttributes terkait
-        $assetAttributes = $attribute->assetAttributes()->whereNotNull('attribute_value')->get();
+        $assetAttributes = $attribute->assetAttributes()
+            ->whereNotNull('attribute_value')
+            ->with(['asset.assetLocation'])
+            ->get();
 
         foreach ($assetAttributes as $assetAttribute) {
-            // Tanggal akhir notifikasi adalah tanggal yang disimpan di attribute_value
             $endDate = Carbon::parse($assetAttribute->attribute_value);
-
-            // Tanggal awal notifikasi adalah attribute_value dikurangi notification_offset
             $startDate = $endDate->copy()->subDays($attribute->notification_offset);
 
-            // Cek apakah hari ini berada dalam rentang waktu notifikasi
             if (Carbon::now()->between($startDate, $endDate)) {
-                // Kirim notifikasi
+                $assetName = $assetAttribute->asset->name ?? 'N/A';
+                $locationName = $assetAttribute->asset->assetLocation->name ?? 'N/A';
+
                 $message = "🔔 *Notifikasi Pengingat Aset* 🔔\n\n";
                 $message .= "Halo, berikut pengingat untuk aset Anda:\n\n";
-                $message .= "📦 *Nama Aset*: {$assetAttribute->asset->name}\n";
+                $message .= "📦 *Nama Aset*: {$assetName}\n";
                 $message .= "🔖 *Atribut*: {$attribute->name}\n";
                 $message .= "📅 *Nilai Atribut*: {$assetAttribute->attribute_value}\n";
-                $message .= "📍 *Lokasi*: {$assetAttribute->asset->assetLocation->name}\n\n";
+                $message .= "📍 *Lokasi*: {$locationName}\n\n";
                 $message .= "Pesan ini untuk mengingatkan bahwa atribut *{$attribute->name}* pada aset Anda membutuhkan perhatian khusus. Harap periksa aset tersebut untuk menghindari masalah di masa depan.\n\n";
                 $message .= "— Bot";
                 $this->sendNotification($message, $assetAttribute->asset);
             }
         }
+
+        unset($assetAttributes);
     }
 
 
